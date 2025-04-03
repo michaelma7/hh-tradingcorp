@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:push": "drizzle-kit push:sqlite --config ./drizzle.config.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx seed.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.15.2",
@@ -14,9 +17,12 @@
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.41.0",
     "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.487.0",
     "next": "15.2.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -26,9 +32,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.30.6",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "tailwindcss": "^4",
+    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }
