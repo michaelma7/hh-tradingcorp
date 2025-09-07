@@ -1,7 +1,7 @@
 'use client';
 
 import { useFormState } from 'react-dom';
-import { signinUser } from '@/app/actions/auth';
+import { signinUser } from '@/actions/auth';
 import Link from 'next/link';
 import Button from './Button';
 

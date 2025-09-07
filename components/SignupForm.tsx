@@ -1,7 +1,7 @@
 'use client';
 import { useFormState } from 'react-dom';
 import Link from 'next/link';
-import { registerUser } from '@/app/actions/auth';
+import { registerUser } from '@/actions/auth';
 import Button from './Button';
 
 export default function SignupForm() {
