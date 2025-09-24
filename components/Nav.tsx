@@ -1,10 +1,10 @@
 'use client';
 import { useTransition } from 'react';
 import { CirclePlus } from 'lucide-react';
-import { createNewOrder } from '@/actions/orders';
-import { createNewCustomer } from '@/actions/customers';
-import { createNewProduct } from '@/actions/products';
-import { createNewManufacturer } from '@/actions/manufacturers';
+import { createOrder } from '@/actions/orders';
+import { createCustomer } from '@/actions/customers';
+import { createProduct } from '@/actions/products';
+import { createManufacturer } from '@/actions/manufacturers';
 import Button from '@/components/Button';
 
 export default function Nav() {
@@ -12,7 +12,7 @@ export default function Nav() {
 
   const handleClick = () => {
     startTransition(() => {
-      createNewOrder();
+      createOrder();
     });
   };
   return (

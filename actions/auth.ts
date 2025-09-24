@@ -2,7 +2,7 @@
 import { db } from '@/db/db';
 import { eq } from 'drizzle-orm';
 import { users } from '@/db/schema';
-import { createSession, updateSession, deleteSession } from './session';
+import { createSession, deleteSession } from './session';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { redirect } from 'next/navigation';
@@ -54,6 +54,11 @@ export async function signup({
   const user = rows[0];
   await createSession(user.id);
   return;
+}
+
+export async function signout() {
+  await deleteSession();
+  redirect('/signin');
 }
 
 export async function registerUser(prevState: any, formData: FormData) {
