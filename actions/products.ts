@@ -1,6 +1,6 @@
 'use server';
 import { db } from '@/db/db';
-import { eq, asc, and, count, desc, ne, not } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { products } from '@/db/schema';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
@@ -40,7 +40,12 @@ export async function updateProduct(productId: number, data: productData) {
   try {
     await db
       .update(products)
-      .set({})
+      .set({
+        name: name,
+        commonName: commonName,
+        manufacturedBy: manufacturedBy,
+        imageLink: imageLink,
+      })
       .where(eq(products.id, `${productId}`));
   } catch (err) {
     console.error(`Update Error ${err}`);
