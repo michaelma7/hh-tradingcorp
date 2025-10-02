@@ -38,35 +38,37 @@ export const customersRelations = relations(customers, ({ many }) => ({
   orders: many(orders),
 }));
 
-export const manufacturer = sqliteTable(
-  'manufacturer',
+export const manufacturers = sqliteTable(
+  'manufacturers',
   {
     id: id(),
     name: text('name').notNull(),
-    streetNumber: integer('streetNumber'),
-    street: text('street'),
-    zip: integer('zip'),
-    bldg: text('bldg'),
+    contact: text('contact'),
   },
   (table) => [unique().on(table.name)]
 );
 
-export const manufacturerRelations = relations(manufacturer, ({ many }) => ({
+export const manufacturerRelations = relations(manufacturers, ({ many }) => ({
   products: many(products),
 }));
 
 export const products = sqliteTable('products', {
   id: id(),
   name: text('name').notNull(),
-  commonName: text('commonName'),
-  manufacturedBy: text('manufacturedBy').notNull(),
+  commonName: text('common_name'),
+  manufacturedBy: text('manufactured_by').notNull(),
   imageLink: text('link'),
+  quantity: integer('quantity'),
+  reserved: integer('reserved'),
+  lastUpdated: date('last_updated'),
 });
 
 export const productRelations = relations(products, ({ many, one }) => ({
-  ordersToProducts: many(ordersToProducts),
-  manufacturedBy: one(manufacturer, {
-    references: [manufacturer.name],
+  orderItems: many(orderItems),
+  purchaseOrderItems: many(purchaseOrderItems),
+  transactions: many(inventoryTransactions),
+  manufacturedBy: one(manufacturers, {
+    references: [manufacturers.name],
     fields: [products.manufacturedBy],
   }),
 }));
@@ -76,21 +78,22 @@ export const orders = sqliteTable(
   {
     id: id(),
     createdAt: createdAt(),
+    updatedAt: date('updated_at'),
     name: text('name').notNull(),
-    createdById: text('createdById').notNull(),
-    customer: text('customer'),
-    products: text('products'),
+    createdById: text('created_by_id').notNull(),
+    customerId: text('customer_id').references(() => customers.id),
+    totalCents: integer('total_cents').notNull(),
     status: boolean('delivered').default(false).notNull(),
-    deliveredDate: date('delivery date'),
+    deliveredDate: date('delivery_date'),
   },
   (table) => [unique().on(table.createdById, table.name)]
 );
 
 export const ordersRelations = relations(orders, ({ many, one }) => ({
-  ordersToProducts: many(ordersToProducts),
+  ordersToOrderItems: many(orderItems),
   customers: one(customers, {
-    references: [customers.name],
-    fields: [orders.customer],
+    references: [customers.id],
+    fields: [orders.customerId],
   }),
   createdBy: one(users, {
     references: [users.id],
@@ -98,28 +101,89 @@ export const ordersRelations = relations(orders, ({ many, one }) => ({
   }),
 }));
 
-export const ordersToProducts = sqliteTable(
-  'orders_to_products',
-  {
-    orderId: integer('order_id')
-      .notNull()
-      .references(() => orders.id),
-    productId: integer('product_id')
-      .notNull()
-      .references(() => products.id),
-  }
-  // (table) => [primaryKey({ columns: [table.orderId, table.productId] })]
+export const orderItems = sqliteTable('order_items', {
+  id: id(),
+  orderId: text('order_id')
+    .notNull()
+    .references(() => orders.id),
+  productId: text('product_id')
+    .notNull()
+    .references(() => products.id),
+  quantity: integer('quantity'),
+  priceCents: integer('price_cents'),
+  subtotal: integer('subtotal'),
+});
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+}));
+
+export const inventoryTransactions = sqliteTable('inventory_transactions', {
+  id: id(),
+  createdAt: createdAt(),
+  productId: text('product_id')
+    .notNull()
+    .references(() => products.id),
+  transaction: text('transaction', {
+    enum: ['sale', 'return', 'received'],
+  }).notNull(),
+  quantity: integer('quantity'),
+  referenceId: text('reference_id'),
+});
+
+export const inventoryTransactionsRelations = relations(
+  inventoryTransactions,
+  ({ one }) => ({
+    inventory: one(products, {
+      fields: [inventoryTransactions.productId],
+      references: [products.id],
+    }),
+  })
 );
 
-export const ordersToProductsRelations = relations(
-  ordersToProducts,
+export const purchaseOrders = sqliteTable('purchase_orders', {
+  id: id(),
+  orderDate: date('order_date').notNull(),
+  status: text('status', {
+    enum: ['received', 'shipped', 'pending'],
+  })
+    .default('pending')
+    .notNull(),
+});
+
+export const purchaseOrderRelations = relations(purchaseOrders, ({ many }) => ({
+  items: many(purchaseOrderItems),
+}));
+
+export const purchaseOrderItems = sqliteTable('purchase_order_items', {
+  id: id(),
+  purchaseOrderId: text('purchase_order_id')
+    .notNull()
+    .references(() => purchaseOrders.id),
+  productId: text('product_id')
+    .notNull()
+    .references(() => products.id),
+  quantity: integer('quantity'),
+  priceCents: integer('price_cents'),
+  expirationDate: date('expiration_date'),
+});
+
+export const purchaseOrderItemsRelations = relations(
+  purchaseOrderItems,
   ({ one }) => ({
-    order: one(orders, {
-      fields: [ordersToProducts.orderId],
-      references: [orders.id],
+    purchaseOrder: one(purchaseOrders, {
+      fields: [purchaseOrderItems.purchaseOrderId],
+      references: [purchaseOrders.id],
     }),
     product: one(products, {
-      fields: [ordersToProducts.productId],
+      fields: [purchaseOrderItems.productId],
       references: [products.id],
     }),
   })
