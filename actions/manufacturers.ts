@@ -8,15 +8,12 @@ import { unstable_cache } from 'next/cache';
 
 interface manufacturerData {
   name: string;
-  streetNumber?: number;
-  street?: string;
-  zip?: number;
-  bldg?: string;
+  contact: string;
 }
 // TODO
 // need to type everything
 export async function createManfacturer(data: manufacturerData) {
-  const { name, streetNumber, street, zip, bldg } = data;
+  const { name, contact } = data;
   // validate data
   if (name === null || typeof name !== 'string') {
     console.error('Data type not supported');
@@ -27,10 +24,7 @@ export async function createManfacturer(data: manufacturerData) {
       .insert(manufacturers)
       .values({
         name: name,
-        streetNumber: streetNumber,
-        street: street,
-        zip: zip,
-        bldg: bldg,
+        contact: contact,
       })
       .onConflictDoNothing()
       .returning({ newId: manufacturers.id });
@@ -44,16 +38,13 @@ export async function updateManfacturer(
   manuId: number,
   data: manufacturerData
 ) {
-  const { name, streetNumber, street, zip, bldg } = data;
+  const { name, contact } = data;
   try {
     await db
       .update(manufacturers)
       .set({
         name: name,
-        streetNumber: streetNumber,
-        street: street,
-        zip: zip,
-        bldg: bldg,
+        contact: contact,
       })
       .where(eq(manufacturers.id, `${manuId}`));
   } catch (err) {
