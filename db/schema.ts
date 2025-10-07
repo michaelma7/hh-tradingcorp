@@ -12,6 +12,12 @@ const createdAt = () =>
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull();
 
+const lastUpdated = () =>
+  text('last_updated')
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`);
+
 const date = (name: string) => text(name);
 
 const boolean = (field: string) => integer(field, { mode: 'boolean' });
@@ -58,9 +64,10 @@ export const products = sqliteTable('products', {
   commonName: text('common_name'),
   manufacturedBy: text('manufactured_by').notNull(),
   imageLink: text('link'),
-  quantity: integer('quantity'),
-  reserved: integer('reserved'),
-  lastUpdated: date('last_updated'),
+  quantity: integer('quantity').default(0),
+  reserved: integer('reserved').default(0),
+  current: integer('current').generatedAlwaysAs(sql`quantity - reserved`),
+  lastUpdated: lastUpdated(),
 });
 
 export const productRelations = relations(products, ({ many, one }) => ({
@@ -73,18 +80,40 @@ export const productRelations = relations(products, ({ many, one }) => ({
   }),
 }));
 
+export const inventoryTransactions = sqliteTable('inventory_transactions', {
+  id: id(),
+  createdAt: createdAt(),
+  productId: text('product_id')
+    .notNull()
+    .references(() => products.id),
+  transaction: text('transaction', {
+    enum: ['sale', 'return', 'received', 'ordered'],
+  }).notNull(),
+  quantity: integer('quantity'),
+  referenceId: text('reference_id'),
+});
+
+export const inventoryTransactionsRelations = relations(
+  inventoryTransactions,
+  ({ one }) => ({
+    inventory: one(products, {
+      fields: [inventoryTransactions.productId],
+      references: [products.id],
+    }),
+  })
+);
+
 export const orders = sqliteTable(
   'orders',
   {
     id: id(),
     createdAt: createdAt(),
-    updatedAt: date('updated_at'),
+    lastUpdated: lastUpdated(),
     name: text('name').notNull(),
     createdById: text('created_by_id').notNull(),
     customerId: text('customer_id').references(() => customers.id),
     totalCents: integer('total_cents').notNull(),
     status: boolean('delivered').default(false).notNull(),
-    deliveredDate: date('delivery_date'),
   },
   (table) => [unique().on(table.createdById, table.name)]
 );
@@ -124,29 +153,6 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     references: [products.id],
   }),
 }));
-
-export const inventoryTransactions = sqliteTable('inventory_transactions', {
-  id: id(),
-  createdAt: createdAt(),
-  productId: text('product_id')
-    .notNull()
-    .references(() => products.id),
-  transaction: text('transaction', {
-    enum: ['sale', 'return', 'received'],
-  }).notNull(),
-  quantity: integer('quantity'),
-  referenceId: text('reference_id'),
-});
-
-export const inventoryTransactionsRelations = relations(
-  inventoryTransactions,
-  ({ one }) => ({
-    inventory: one(products, {
-      fields: [inventoryTransactions.productId],
-      references: [products.id],
-    }),
-  })
-);
 
 export const purchaseOrders = sqliteTable('purchase_orders', {
   id: id(),
