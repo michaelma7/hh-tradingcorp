@@ -2,6 +2,7 @@
 import { db } from '@/db/db';
 import { eq, asc, and } from 'drizzle-orm';
 import { orders, orderItems } from '@/db/schema';
+import { updateInventory } from './products';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { unstable_cache } from 'next/cache';
@@ -12,8 +13,6 @@ export interface orderData {
   customerId?: string;
   totalCents: number;
   status: boolean;
-  deliveredDate?: string;
-  items: orderItemData[];
 }
 
 export type orderItemData = {
@@ -31,22 +30,13 @@ export type orderItemChanges = {
 
 // function dataValidation(data: orderData | orderItemData): void {}
 
-export async function createOrder(data: orderData) {
-  const {
-    name,
-    createdById,
-    customerId,
-    totalCents,
-    status,
-    deliveredDate,
-    items,
-  } = data;
+export async function createOrder(data: orderData, items: orderItemData[]) {
+  const { name, createdById, customerId, totalCents, status } = data;
   // validate data
   if (name === null || typeof name !== 'string') {
     console.error('Data type not supported');
     return;
   }
-
   try {
     return await db.transaction(async (tx) => {
       const newOrder: typeof orders.$inferInsert = {
@@ -54,7 +44,6 @@ export async function createOrder(data: orderData) {
         createdById: createdById,
         customerId: customerId,
         status: status,
-        deliveredDate: deliveredDate,
         totalCents: totalCents,
       };
 
@@ -73,6 +62,17 @@ export async function createOrder(data: orderData) {
       }));
 
       await tx.insert(orderItems).values(itemsWithId).onConflictDoNothing();
+
+      const inventoryChanges = items.map(
+        (item) =>
+          ({
+            productId: item.productId,
+            transaction: 'ordered',
+            quantity: item.quantity!,
+            referenceId: newId.id,
+          } as const)
+      );
+      for (const change of inventoryChanges) await updateInventory(change);
       return { newId };
     });
   } catch (err) {
@@ -82,8 +82,7 @@ export async function createOrder(data: orderData) {
 }
 
 export async function updateOrder(orderId: string, data: orderData) {
-  const { name, createdById, customerId, totalCents, status, deliveredDate } =
-    data;
+  const { name, createdById, customerId, totalCents, status } = data;
   // validate data
   if (name === null || typeof name !== 'string') {
     console.error('Data type not supported');
@@ -96,14 +95,30 @@ export async function updateOrder(orderId: string, data: orderData) {
       createdById: createdById,
       customerId: customerId,
       status: status,
-      deliveredDate: deliveredDate,
       totalCents: totalCents,
     };
-    return await db
-      .update(orders)
-      .set(updatedOrder)
-      .where(eq(orders.id, `${orderId}`))
-      .returning({ id: orders.id });
+    await db.transaction(async (tx) => {
+      await tx
+        .update(orders)
+        .set(updatedOrder)
+        .where(eq(orders.id, `${orderId}`))
+        .returning({ id: orders.id });
+      if (status) {
+        const items = await tx
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, `${orderId}`));
+        for (const item of items) {
+          const deliveredItem = {
+            productId: item.productId,
+            transaction: 'sale',
+            quantity: item.quantity!,
+            referenceId: orderId,
+          } as const;
+          await updateInventory(deliveredItem);
+        }
+      }
+    });
   } catch (err) {
     console.error(`Order update Error ${err}`);
     throw err;
@@ -121,7 +136,7 @@ export async function modifyOrderItems(
     throw new Error('Too many lines detected');
 
   try {
-    await db.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
       // insert/update each new item
       if (addOrUpdate.length) {
         for (let i = 0; i < addOrUpdate.length; i++) {
@@ -146,7 +161,6 @@ export async function modifyOrderItems(
               )
             );
       }
-      return;
     });
   } catch (err) {
     console.error('OrderItems update error', err);
@@ -184,15 +198,17 @@ export const getOrdersForDashboard = unstable_cache(
 
 export async function getOneOrder(orderId: string) {
   try {
-    const data = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, `${orderId}`));
-    const lineItems = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.orderId, `${orderId}`));
-    return { data, lineItems };
+    return await db.transaction(async (tx) => {
+      const orderData = await tx
+        .select()
+        .from(orders)
+        .where(eq(orders.id, `${orderId}`));
+      const lineItems = await tx
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, `${orderId}`));
+      return { orderData, lineItems };
+    });
   } catch (err) {
     console.error(`Look up failed ${err}`);
     throw err;
