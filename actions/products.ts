@@ -95,7 +95,7 @@ export async function updateInventory(data: inventoryTransaction) {
         .onConflictDoNothing()
         .returning({ id: inventoryTransactions.id });
 
-      if (transaction === 'received') {
+      if (transaction === 'received' || transaction === 'returned') {
         await tx
           .update(products)
           .set({ quantity: sql`${products.quantity} + ${quantity}` })

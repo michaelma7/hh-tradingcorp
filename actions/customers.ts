@@ -6,7 +6,7 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { unstable_cache } from 'next/cache';
 
-interface customersData {
+export interface customersData {
   name: string;
   location: string;
 }

@@ -6,7 +6,7 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { unstable_cache } from 'next/cache';
 
-interface manufacturerData {
+export interface manufacturerData {
   name: string;
   contact: string;
 }
