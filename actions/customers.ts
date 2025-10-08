@@ -64,3 +64,15 @@ export const getCustomersForDashboard = unstable_cache(
     revalidate: 120,
   }
 );
+
+export async function getOneCustomer(customerId: string) {
+  try {
+    return await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, `${customerId}`));
+  } catch (err) {
+    console.error(`Customer data fetch error ${err}`);
+    throw err;
+  }
+}

@@ -76,3 +76,15 @@ export const getManfacturersForDashboard = unstable_cache(
     revalidate: 120,
   }
 );
+
+export async function getOneManufacturer(manufacturerId: string) {
+  try {
+    return await db
+      .select()
+      .from(manufacturers)
+      .where(eq(manufacturers.id, `${manufacturerId}`));
+  } catch (err) {
+    console.error(`Manufacturer data fetch error ${err}`);
+    throw err;
+  }
+}

@@ -145,3 +145,15 @@ export const getProductsForDashboard = unstable_cache(
     revalidate: 120,
   }
 );
+
+export async function getOneProduct(productId: string) {
+  try {
+    return await db
+      .select()
+      .from(products)
+      .where(eq(products.id, `${productId}`));
+  } catch (err) {
+    console.error(`Product data fetch error ${err}`);
+    throw err;
+  }
+}
