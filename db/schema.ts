@@ -140,7 +140,7 @@ export const orderItems = sqliteTable('order_items', {
     .references(() => products.id),
   quantity: integer('quantity'),
   priceCents: integer('price_cents'),
-  subtotal: integer('subtotal'),
+  subtotal: integer('subtotal').generatedAlwaysAs(sql`quantity * priceCents`),
 });
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
