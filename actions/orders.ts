@@ -1,7 +1,7 @@
 'use server';
 import { db } from '@/db/db';
 import { eq, asc, and } from 'drizzle-orm';
-import { orders, orderItems } from '@/db/schema';
+import { orders, orderItems, products, customers } from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
@@ -20,7 +20,6 @@ export type orderItemData = {
   productId: string;
   quantity?: number;
   priceCents?: number;
-  subtotal?: number;
 };
 
 export type orderItemChanges = {
@@ -58,7 +57,6 @@ export async function createOrder(data: orderData, items: orderItemData[]) {
         productId: item.productId,
         quantity: item.quantity || 0,
         priceCents: item.priceCents || 0,
-        subtotal: item.subtotal || 0,
       }));
 
       await tx.insert(orderItems).values(itemsWithId).onConflictDoNothing();
@@ -198,17 +196,38 @@ export const getOrdersForDashboard = unstable_cache(
 
 export async function getOneOrder(orderId: string) {
   try {
-    return await db.transaction(async (tx) => {
-      const orderData = await tx
-        .select()
-        .from(orders)
-        .where(eq(orders.id, `${orderId}`));
-      const lineItems = await tx
-        .select()
-        .from(orderItems)
-        .where(eq(orderItems.orderId, `${orderId}`));
-      return { orderData, lineItems };
-    });
+    return await db
+      .select({
+        id: orders.id,
+        name: orders.name,
+        total: orders.totalCents,
+        status: orders.status,
+        customer: customers.name,
+        product: products.name,
+        quantity: orderItems.quantity,
+        price: orderItems.priceCents,
+        subtotal: orderItems.subtotal,
+      })
+      .from(orders)
+      .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+      .innerJoin(products, eq(orderItems.productId, products.id))
+      .innerJoin(customers, eq(orders.customerId, customers.id))
+      .where(eq(orders.id, orderId))
+      .all();
+    // return await db.query.orders.findFirst({
+    //   where: (orders, { eq }) => (eq(orders.id), orderId),
+    //   with: {
+    //     orderItems: {
+    //       with: {
+    //         products: true,
+    //       },
+    //       quantity: true,
+    //       priceCents: true,
+    //       subtotal: true,
+    //     },
+    //     customers: true,
+    //   },
+    // });
   } catch (err) {
     console.error(`Look up failed ${err}`);
     throw err;
