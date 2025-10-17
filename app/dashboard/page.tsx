@@ -15,6 +15,10 @@ import { getPurchaseOrdersForDashboard } from '@/actions/purchaseOrders';
 import { getCustomersForDashboard } from '@/actions/customers';
 import { getManfacturersForDashboard } from '@/actions/manufacturers';
 import NewOrderModal from '@/components/NewOrderModal';
+import NewPurchaseOrderModal from '@/components/NewPurchaseOrderModal';
+import NewProductModal from '@/components/NewProductModal';
+import NewCustomerModal from '@/components/NewCustomerModal';
+import NewManufacturerModal from '@/components/NewManufacturerModal';
 
 import Link from 'next/link';
 
@@ -56,9 +60,7 @@ export default async function Dashboard() {
           </div>
         </Tab>
         <Tab key='purchaseOrders' title='Purchase Orders'>
-          <Button color='primary' size='md' radius='md' onPress={openModal}>
-            Create New Purchase Order
-          </Button>
+          <NewPurchaseOrderModal />
           <Button color='primary' size='md' radius='md'>
             <Link href='/purchaseOrders'>View All Purchase Orders</Link>
           </Button>
@@ -80,9 +82,7 @@ export default async function Dashboard() {
           </Table>
         </Tab>
         <Tab key='products' title='Products'>
-          <Button color='primary' size='md' radius='md' onPress={openModal}>
-            Create New Products
-          </Button>
+          <NewProductModal />
           <Button color='primary' size='md' radius='md'>
             <Link href='/products'>View All Products</Link>
           </Button>
@@ -106,9 +106,7 @@ export default async function Dashboard() {
           </Table>
         </Tab>
         <Tab key='customers' title='Customers'>
-          <Button color='primary' size='md' radius='md' onPress={openModal}>
-            Create New Customer
-          </Button>
+          <NewCustomerModal />
           <Button color='primary' size='md' radius='md'>
             <Link href='/customers'>View All Customers</Link>
           </Button>
@@ -128,9 +126,7 @@ export default async function Dashboard() {
           </Table>
         </Tab>
         <Tab key='manufacturers' title='Manufacturers'>
-          <Button color='primary' size='md' radius='md' onPress={openModal}>
-            Create New Manufacturer
-          </Button>
+          <NewManufacturerModal />
           <Button color='primary' size='md' radius='md'>
             <Link href='/Manufacturers'>View All Manufacturers</Link>
           </Button>
