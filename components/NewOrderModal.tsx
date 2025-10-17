@@ -19,7 +19,7 @@ import { userFormState } from './SignupForm';
 export default function NewOrderModal() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit] = useActionState<userFormState>(
+  const [formState, submit, pending] = useActionState<userFormState>(
     createOrder,
     initState
   );
@@ -62,7 +62,7 @@ export default function NewOrderModal() {
                 New Order
               </ModalHeader>
               <ModalBody>
-                <form>
+                <form action={submit}>
                   <Input type='text' name='orderName' label='Order Name' />
                   <Input type='text' name='customer' label='Customer' />
                   <Switch aria-label='Order Delivered?' name='status' size='md'>
@@ -146,11 +146,11 @@ export default function NewOrderModal() {
                   </div>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
-              </ModalBody>
-              <ModalFooter>
-                <Button color='primary' onPress={submit}>
+                <Button color='primary' disabled={pending}>
                   Submit
                 </Button>
+              </ModalBody>
+              <ModalFooter>
                 <Button color='danger' variant='light' onPress={onClose}>
                   Cancel
                 </Button>

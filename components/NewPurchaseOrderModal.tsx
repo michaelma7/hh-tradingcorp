@@ -21,7 +21,7 @@ import { userFormState } from './SignupForm';
 export default function NewOrderModal() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit] = useActionState<userFormState>(
+  const [formState, submit, pending] = useActionState<userFormState>(
     createPurchaseOrder,
     initState
   );
@@ -61,7 +61,7 @@ export default function NewOrderModal() {
                 New Purchase Order
               </ModalHeader>
               <ModalBody>
-                <form>
+                <form action={submit}>
                   <DatePicker label='Order Date' isRequired name='orderDate' />
                   <RadioGroup
                     label='Delivery Status'
@@ -150,11 +150,11 @@ export default function NewOrderModal() {
                   </div>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
-              </ModalBody>
-              <ModalFooter>
-                <Button color='primary' onPress={submit}>
+                <Button color='primary' disabled={pending}>
                   Submit
                 </Button>
+              </ModalBody>
+              <ModalFooter>
                 <Button color='danger' variant='light' onPress={onClose}>
                   Cancel
                 </Button>
