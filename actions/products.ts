@@ -133,10 +133,22 @@ export async function deleteProduct(productId: string) {
 
 export const getProductsForDashboard = unstable_cache(
   async () => {
-    const data = await db
-      .select({ name: products.name })
-      .from(products)
-      .orderBy(asc(products.id));
+    // const data = await db
+    //   .select({
+    //     name: products.name,
+    //     quantity: products.quantity,
+    //     manufacturedBy: products.manufacturedBy,
+    //     lastUpdated: products.lastUpdated,
+    //   })
+    //   .from(products)
+    //   .orderBy(asc(products.id))
+    //   .limit(25);
+    // return data ?? [];
+
+    const data = await db.query.products.findMany({
+      orderBy: [asc(products.lastUpdated)],
+      limit: 25,
+    });
     return data ?? [];
   },
   [],

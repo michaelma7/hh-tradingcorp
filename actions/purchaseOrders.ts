@@ -1,7 +1,7 @@
 'use server';
 import { db } from '@/db/db';
 import { eq, asc, and } from 'drizzle-orm';
-import { purchaseOrders, purchaseOrderItems } from '@/db/schema';
+import { purchaseOrders, purchaseOrderItems, products } from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
@@ -196,17 +196,35 @@ export async function getPurchaseOrderItems(purchaseOrderId: string) {
 
 export async function getOnePurchaseOrder(purchaseOrderId: string) {
   try {
-    return await db.transaction(async (tx) => {
-      const orderData = await tx
-        .select()
-        .from(purchaseOrders)
-        .where(eq(purchaseOrders.id, `${purchaseOrderId}`));
-      const lineItems = await tx
-        .select()
-        .from(purchaseOrderItems)
-        .where(eq(purchaseOrderItems.purchaseOrderId, `${purchaseOrderId}`));
-      return { orderData, lineItems };
-    });
+    return await db
+      .select({
+        id: purchaseOrders.id,
+        orderDate: purchaseOrders.orderDate,
+        status: purchaseOrders.status,
+        product: products.name,
+        quantity: purchaseOrderItems.quantity,
+        cost: purchaseOrderItems.priceCents,
+        expirationDate: purchaseOrderItems.expirationDate,
+      })
+      .from(purchaseOrders)
+      .innerJoin(
+        purchaseOrderItems,
+        eq(purchaseOrders.id, purchaseOrderItems.purchaseOrderId)
+      )
+      .innerJoin(products, eq(purchaseOrderItems.productId, products.id))
+      .where(eq(purchaseOrders.id, purchaseOrderId))
+      .all();
+    // return await db.query.purchaseOrders.findFirst({
+    //   where: (purchaseOrders, { eq }) => (eq(purchaseOrders.id), purchaseOrderId),
+    //   with: {
+    //     purchaseOrderItems: {
+    //       with: {
+    //         products: true,
+    //       },
+    //       true,
+    //     },
+    //   },
+    // });
   } catch (err) {
     console.error(`Look up failed ${err}`);
     throw err;

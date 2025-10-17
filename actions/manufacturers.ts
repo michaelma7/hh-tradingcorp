@@ -64,10 +64,16 @@ export async function deleteManfacturer(manufacturerId: number) {
 
 export const getManfacturersForDashboard = unstable_cache(
   async () => {
-    const data = await db
-      .select({ name: manufacturers.name })
-      .from(manufacturers)
-      .orderBy(asc(manufacturers.id));
+    // const data = await db
+    //   .select({ name: manufacturers.name, contact: manufacturers.contact })
+    //   .from(manufacturers)
+    //   .orderBy(asc(manufacturers.id))
+    //   .limit(25);
+    // return data ?? [];
+    const data = await db.query.manufacturers.findMany({
+      orderBy: [asc(manufacturers.id)],
+      limit: 25,
+    });
     return data ?? [];
   },
   [],
