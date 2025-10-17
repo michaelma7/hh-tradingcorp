@@ -11,7 +11,7 @@ import {
   NumberInput,
 } from '@heroui/react';
 import { createProduct } from '@/actions/products';
-import { useActionState, useState } from 'react';
+import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 import { userFormState } from './SignupForm';
 
