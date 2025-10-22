@@ -26,40 +26,50 @@ export async function decrypt(session: string | undefined = '') {
 }
 
 export async function createSession(userId: string) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await encrypt({ userId, expiresAt });
-  const cookieStore = await cookies();
+  try {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const session = await encrypt({ userId, expiresAt });
+    const cookieStore = await cookies();
 
-  cookieStore.set('session', session, {
-    httpOnly: true,
-    secure: true,
-    expires: expiresAt,
-    sameSite: 'lax',
-    path: '/',
-  });
-
-  return;
+    cookieStore.set('session', session, {
+      httpOnly: true,
+      secure: true,
+      expires: expiresAt,
+      sameSite: 'lax',
+      path: '/',
+    });
+  } catch (err) {
+    console.error('Failed to create session', err);
+  }
 }
 
 export async function updateSession() {
-  const session = (await cookies()).get('session')?.value;
-  const payload = await decrypt(session);
+  try {
+    const session = (await cookies()).get('session')?.value;
+    const payload = await decrypt(session);
 
-  if (!session || !payload) return null;
+    if (!session || !payload) return null;
 
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const cookieStore = await cookies();
-  cookieStore.set('session', session, {
-    httpOnly: true,
-    secure: true,
-    expires: expires,
-    sameSite: 'lax',
-    path: '/',
-  });
+    const cookieStore = await cookies();
+    cookieStore.set('session', session, {
+      httpOnly: true,
+      secure: true,
+      expires: expires,
+      sameSite: 'lax',
+      path: '/',
+    });
+  } catch (err) {
+    console.error('Failed to update session', err);
+  }
 }
 
 export async function deleteSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete('session');
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete('session');
+  } catch (err) {
+    console.error('Failed to delete session', err);
+  }
 }

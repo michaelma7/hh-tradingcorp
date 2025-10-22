@@ -20,25 +20,46 @@ const authSchema = z.object({
     .trim(),
 });
 
+const signUpSchema = z
+  .object({
+    email: z.string().email({ message: 'Please enter a valid email.' }).trim(),
+    password: z
+      .string()
+      .min(8, { message: 'Be at least 8 characters long' })
+      .regex(/[a-zA-Z]/, { message: 'Contain at least one letter.' })
+      .regex(/[0-9]/, { message: 'Contain at least one number.' })
+      .regex(/[^a-zA-Z0-9]/, {
+        message: 'Contain at least one special character.',
+      })
+      .trim(),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
 export async function signin({
   data,
 }: SafeParseSuccess<{
   email: string;
   password: string;
 }>) {
-  const match = await db.query.users.findFirst({
-    where: eq(users.email, data.email),
-  });
+  try {
+    const match = await db.query.users.findFirst({
+      where: eq(users.email, data.email),
+    });
 
-  if (!match) throw new Error('Invalid Username or password');
+    if (!match) throw new Error('Invalid Username or password');
 
-  const pw = await bcrypt.compare(data.password, match.password);
+    const pw = await bcrypt.compare(data.password, match.password);
 
-  if (!pw) throw new Error('Invalid Username or password');
+    if (!pw) throw new Error('Invalid Username or password');
 
-  await createSession(match.id);
-
-  return;
+    await createSession(match.id);
+  } catch (err) {
+    console.error('Failed to sign in', err);
+  }
 }
 
 export async function signup({
@@ -47,31 +68,39 @@ export async function signup({
   email: string;
   password: string;
 }>) {
-  const encrypted = await bcrypt.hash(data.password, 10);
-  const email = data.email;
-  const rows = await db
-    .insert(users)
-    .values({ email, password: encrypted })
-    .returning({
-      id: users.id,
-      email: users.email,
-      createdAt: users.createdAt,
-    });
+  try {
+    const encrypted = await bcrypt.hash(data.password, 10);
+    const email = data.email;
+    const rows = await db
+      .insert(users)
+      .values({ email, password: encrypted })
+      .returning({
+        id: users.id,
+        email: users.email,
+        createdAt: users.createdAt,
+      });
 
-  const user = rows[0];
-  await createSession(user.id);
-  return;
+    const user = rows[0];
+    await createSession(user.id);
+  } catch (err) {
+    console.error('Failed to create user', err);
+  }
 }
 
 export async function signout() {
-  await deleteSession();
-  redirect('/signin');
+  try {
+    await deleteSession();
+    redirect('/signin');
+  } catch (err) {
+    console.error('Failed to signout', err);
+  }
 }
 
 export async function registerUser(prevState: any, formData: FormData) {
-  const data = authSchema.safeParse({
+  const data = signUpSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
+    confirmPassword: formData.get('confirmPassword'),
   });
 
   if (!data.success) return { errors: data.error.flatten().fieldErrors };
@@ -84,7 +113,7 @@ export async function registerUser(prevState: any, formData: FormData) {
   redirect('/dashboard');
 }
 
-export async function signinUser(prevState: any, formData: FormData) {
+export async function signInUser(prevState: any, formData: FormData) {
   const data = authSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),

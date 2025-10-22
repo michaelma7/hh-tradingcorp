@@ -1,6 +1,6 @@
 'use client';
 import { useState, useActionState } from 'react';
-import { signinUser } from '@/actions/auth';
+import { signInUser } from '@/actions/auth';
 import Link from 'next/link';
 import { Input } from '@heroui/react';
 import Submit from './Submit';
@@ -10,8 +10,8 @@ import { userFormState } from './SignupForm';
 
 export default function SigninForm() {
   const initState = { message: null };
-  const [formState, action] = useActionState<userFormState>(
-    signinUser,
+  const [formState, submit] = useActionState<userFormState>(
+    signInUser,
     initState
   );
 
@@ -20,23 +20,24 @@ export default function SigninForm() {
 
   return (
     <form
-      action={action}
+      action={submit}
       className='bg-content1 border border-default-100 shadow-lg rounded-md p-3 flex flex-col gap-2 '
     >
-      <h3 className='my-4'>Sign in</h3>
+      <h3 className='my-4 font-semibold'>Sign in</h3>
       <Input
         label='Email'
         type='email'
         variant='bordered'
+        size='lg'
         isRequired
-        fullWidth
+        labelPlacement='outside-left'
       />
       <Input
         label='Password'
         type={isVisible ? 'text' : 'password'}
         variant='bordered'
+        labelPlacement='outside-left'
         isRequired
-        fullWidth
         endContent={
           <button
             aria-label='toggle password visibility'
@@ -53,9 +54,9 @@ export default function SigninForm() {
         }
       />
       <Submit label={'Sign Up'} />
-      <div>
+      {/* <div>
         <Link href='/signup'>{`Don't have an account?`}</Link>
-      </div>
+      </div> */}
       {formState?.message && <p>{formState.message}</p>}
     </form>
   );
