@@ -196,40 +196,29 @@ export const getOrdersForDashboard = unstable_cache(
 
 export async function getOneOrder(orderId: string) {
   try {
-    return await db
-      .select({
-        id: orders.id,
-        name: orders.name,
-        total: orders.totalCents,
-        status: orders.status,
-        customer: customers.name,
-        product: products.name,
-        quantity: orderItems.quantity,
-        price: orderItems.priceCents,
-        subtotal: orderItems.subtotal,
-      })
-      .from(orders)
-      .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-      .innerJoin(products, eq(orderItems.productId, products.id))
-      .innerJoin(customers, eq(orders.customerId, customers.id))
-      .where(eq(orders.id, orderId))
-      .all();
-    // return await db.query.orders.findFirst({
-    //   where: (orders, { eq }) => (eq(orders.id), orderId),
-    //   with: {
-    //     orderItems: {
-    //       with: {
-    //         products: true,
-    //       },
-    //       quantity: true,
-    //       priceCents: true,
-    //       subtotal: true,
-    //     },
-    //     customers: true,
-    //   },
-    // });
+    return await db.query.orders.findFirst({
+      where: eq(orders.id, orderId),
+      with: {
+        ordersToOrderItems: true,
+        // {
+        //   // quantity: true,
+        //   // priceCents: true,
+        //   // subtotal: true,
+        // },
+        customers: true,
+      },
+    });
   } catch (err) {
     console.error(`Look up failed ${err}`);
+    throw err;
+  }
+}
+
+export async function getAllOrders() {
+  try {
+    return await db.select().from(orders);
+  } catch (err) {
+    console.error(`Product data fetch error ${err}`);
     throw err;
   }
 }

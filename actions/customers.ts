@@ -76,3 +76,12 @@ export async function getOneCustomer(customerId: string) {
     throw err;
   }
 }
+
+export async function getAllCustomers() {
+  try {
+    return await db.select().from(customers);
+  } catch (err) {
+    console.error(`Product data fetch error ${err}`);
+    throw err;
+  }
+}

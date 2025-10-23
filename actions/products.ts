@@ -133,18 +133,6 @@ export async function deleteProduct(productId: string) {
 
 export const getProductsForDashboard = unstable_cache(
   async () => {
-    // const data = await db
-    //   .select({
-    //     name: products.name,
-    //     quantity: products.quantity,
-    //     manufacturedBy: products.manufacturedBy,
-    //     lastUpdated: products.lastUpdated,
-    //   })
-    //   .from(products)
-    //   .orderBy(asc(products.id))
-    //   .limit(25);
-    // return data ?? [];
-
     const data = await db.query.products.findMany({
       orderBy: [asc(products.lastUpdated)],
       limit: 25,
@@ -164,6 +152,15 @@ export async function getOneProduct(productId: string) {
       .select()
       .from(products)
       .where(eq(products.id, `${productId}`));
+  } catch (err) {
+    console.error(`Product data fetch error ${err}`);
+    throw err;
+  }
+}
+
+export async function getAllProducts() {
+  try {
+    return await db.select().from(products);
   } catch (err) {
     console.error(`Product data fetch error ${err}`);
     throw err;

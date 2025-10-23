@@ -64,12 +64,6 @@ export async function deleteManfacturer(manufacturerId: number) {
 
 export const getManfacturersForDashboard = unstable_cache(
   async () => {
-    // const data = await db
-    //   .select({ name: manufacturers.name, contact: manufacturers.contact })
-    //   .from(manufacturers)
-    //   .orderBy(asc(manufacturers.id))
-    //   .limit(25);
-    // return data ?? [];
     const data = await db.query.manufacturers.findMany({
       orderBy: [asc(manufacturers.id)],
       limit: 25,
@@ -91,6 +85,15 @@ export async function getOneManufacturer(manufacturerId: string) {
       .where(eq(manufacturers.id, `${manufacturerId}`));
   } catch (err) {
     console.error(`Manufacturer data fetch error ${err}`);
+    throw err;
+  }
+}
+
+export async function getAllManufacturers() {
+  try {
+    return await db.select().from(manufacturers);
+  } catch (err) {
+    console.error(`Product data fetch error ${err}`);
     throw err;
   }
 }

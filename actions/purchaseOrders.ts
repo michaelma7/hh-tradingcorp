@@ -196,37 +196,23 @@ export async function getPurchaseOrderItems(purchaseOrderId: string) {
 
 export async function getOnePurchaseOrder(purchaseOrderId: string) {
   try {
-    return await db
-      .select({
-        id: purchaseOrders.id,
-        orderDate: purchaseOrders.orderDate,
-        status: purchaseOrders.status,
-        product: products.name,
-        quantity: purchaseOrderItems.quantity,
-        cost: purchaseOrderItems.priceCents,
-        expirationDate: purchaseOrderItems.expirationDate,
-      })
-      .from(purchaseOrders)
-      .innerJoin(
-        purchaseOrderItems,
-        eq(purchaseOrders.id, purchaseOrderItems.purchaseOrderId)
-      )
-      .innerJoin(products, eq(purchaseOrderItems.productId, products.id))
-      .where(eq(purchaseOrders.id, purchaseOrderId))
-      .all();
-    // return await db.query.purchaseOrders.findFirst({
-    //   where: (purchaseOrders, { eq }) => (eq(purchaseOrders.id), purchaseOrderId),
-    //   with: {
-    //     purchaseOrderItems: {
-    //       with: {
-    //         products: true,
-    //       },
-    //       true,
-    //     },
-    //   },
-    // });
+    return await db.query.purchaseOrders.findFirst({
+      where: (purchaseOrders, { eq }) => eq(purchaseOrders.id, purchaseOrderId),
+      with: {
+        items: true,
+      },
+    });
   } catch (err) {
     console.error(`Look up failed ${err}`);
+    throw err;
+  }
+}
+
+export async function getAllPurchaseOrders() {
+  try {
+    return await db.select().from(purchaseOrders);
+  } catch (err) {
+    console.error(`Product data fetch error ${err}`);
     throw err;
   }
 }
