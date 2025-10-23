@@ -6,14 +6,12 @@ import { Input } from '@heroui/react';
 import Submit from './Submit';
 import { EyeFilledIcon } from '@/public/eyeFilled';
 import { EyeSlashFilledIcon } from '@/public/eyeSlashFilled';
-import { userFormState } from './SignupForm';
 
 export default function SigninForm() {
   const initState = { message: null };
-  const [formState, submit] = useActionState<userFormState>(
-    signInUser,
-    initState
-  );
+  const [formState, submit, isPending] = useActionState<{
+    message: string | null;
+  }>(signInUser, initState);
 
   const [isVisible, setIsVisible] = useState(false);
   const toggleVisibility = () => setIsVisible(!isVisible);
@@ -26,6 +24,7 @@ export default function SigninForm() {
       <h3 className='my-4 font-semibold'>Sign in</h3>
       <Input
         label='Email'
+        name='email'
         type='email'
         variant='bordered'
         size='lg'
@@ -34,6 +33,7 @@ export default function SigninForm() {
       />
       <Input
         label='Password'
+        name='password'
         type={isVisible ? 'text' : 'password'}
         variant='bordered'
         labelPlacement='outside-left'
@@ -53,10 +53,11 @@ export default function SigninForm() {
           </button>
         }
       />
-      <Submit label={'Sign Up'} />
+      <Submit label={'Sign In'} />
       {/* <div>
         <Link href='/signup'>{`Don't have an account?`}</Link>
       </div> */}
+      {isPending ? 'Loading' : formState.message}
       {formState?.message && <p>{formState.message}</p>}
     </form>
   );
