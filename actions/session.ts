@@ -1,4 +1,7 @@
 'use server';
+import { db } from '@/db/db';
+import { eq } from 'drizzle-orm';
+import { users } from '@/db/schema';
 import { JWTPayload, SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
@@ -23,6 +26,20 @@ export async function decrypt(session: string | undefined = '') {
   } catch (err) {
     console.error('Verification failed', err);
   }
+}
+
+export async function getUserFromToken() {
+  const session = (await cookies()).get('session')?.value;
+  const payload = await decrypt(session);
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, payload!.id),
+    columns: {
+      id: true,
+      email: true,
+    },
+  });
+
+  return user;
 }
 
 export async function createSession(userId: string) {
