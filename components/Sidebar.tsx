@@ -1,7 +1,8 @@
 'use client';
-
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { Button } from '@heroui/react';
+import { signout } from '@/actions/auth';
 
 const links = [
   { route: '/dashboard', name: 'Home' },
@@ -36,7 +37,9 @@ export default function Sidebar() {
         ))}
       </div>
       <div className='absolute bottom-0 w-full left-0 px-4'>
-        <button>Sign Out</button>
+        <Button color='warning' onPress={signout}>
+          Sign Out
+        </Button>
       </div>
     </div>
   );

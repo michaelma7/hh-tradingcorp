@@ -1,32 +1,24 @@
 'use client';
-import { useTransition } from 'react';
-import { CirclePlus } from 'lucide-react';
-import { createOrder } from '@/actions/orders';
-import { createCustomer } from '@/actions/customers';
-import { createProduct } from '@/actions/products';
-import { createManufacturer } from '@/actions/manufacturers';
-import Button from '@/components/Button';
+import { Button, Input } from '@heroui/react';
+import { signout } from '@/actions/auth';
+import Link from 'next/link';
 
 export default function Nav() {
-  const [isPending, startTransition] = useTransition();
-
-  const handleClick = () => {
-    startTransition(() => {
-      createOrder();
-    });
-  };
   return (
     <nav className='h-[65px] border-b border-default-50 flex items-center px-6 gap-4'>
       <div>
-        <Button
-          // isLoading={isPending}
-          onClick={handleClick}
-        >
-          <CirclePlus size={16} /> New Order
+        <Button color='primary'>
+          <Link href='/dashboard'>Dashboard</Link>
+        </Button>
+        <Button color='primary'>
+          <Link href='/orders'>Orders</Link>
+        </Button>
+        <Button color='warning' onPress={signout}>
+          Sign Out
         </Button>
       </div>
       <div className='w-1/2'>
-        <input placeholder='search' />
+        <Input placeholder='search' />
       </div>
     </nav>
   );
