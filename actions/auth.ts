@@ -90,21 +90,21 @@ export async function signup({
 export async function signout() {
   try {
     await deleteSession();
-    redirect('/signin');
   } catch (err) {
     console.error('Failed to signout', err);
   }
+  redirect('/signin');
 }
 
 export async function registerUser(prevState: any, formData: FormData) {
-  const data = signUpSchema.safeParse({
-    email: formData.get('email'),
-    password: formData.get('password'),
-    confirmPassword: formData.get('confirmPassword'),
-  });
-
-  if (!data.success) return { errors: data.error.flatten().fieldErrors };
   try {
+    const data = signUpSchema.safeParse({
+      email: formData.get('email'),
+      password: formData.get('password'),
+      confirmPassword: formData.get('confirmPassword'),
+    });
+
+    if (!data.success) return { errors: data.error.flatten().fieldErrors };
     await signup(data);
   } catch (err) {
     console.error(err);
@@ -114,14 +114,13 @@ export async function registerUser(prevState: any, formData: FormData) {
 }
 
 export async function signInUser(prevState: any, formData: FormData) {
-  const data = authSchema.safeParse({
-    email: formData.get('email'),
-    password: formData.get('password'),
-  });
-
-  if (!data.success) return { errors: data.error.flatten().fieldErrors };
-
   try {
+    const data = authSchema.safeParse({
+      email: formData.get('email'),
+      password: formData.get('password'),
+    });
+    console.log(formData);
+    if (!data.success) return { errors: data.error.flatten().fieldErrors };
     await signin(data);
   } catch (err) {
     console.error(err);
