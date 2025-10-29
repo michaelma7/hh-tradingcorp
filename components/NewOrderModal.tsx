@@ -6,20 +6,20 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  Button,
-  Input,
-  Switch,
-  NumberInput,
-} from '@heroui/react';
+} from '@heroui/modal';
+import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
+import { Switch } from '@heroui/switch';
+import { NumberInput } from '@heroui/number-input';
 import { createOrder } from '@/actions/orders';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
-import { userFormState } from './SignupForm';
+import Submit from './Submit';
 
 export default function NewOrderModal() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit, pending] = useActionState<userFormState>(
+  const [formState, submit] = useActionState<{ message: string | null }>(
     createOrder,
     initState
   );
@@ -50,11 +50,23 @@ export default function NewOrderModal() {
   );
 
   return (
-    <>
-      <Button color='primary' size='md' radius='md' onPress={onOpen}>
+    <div>
+      <Button
+        color='primary'
+        size='sm'
+        radius='md'
+        disableAnimation
+        onPress={onOpen}
+        className='flex'
+      >
         Create New Order <CirclePlus size={16} />
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        className='bg-white'
+        placement='top'
+      >
         <ModalContent>
           {(onClose) => (
             <>
@@ -62,7 +74,10 @@ export default function NewOrderModal() {
                 New Order
               </ModalHeader>
               <ModalBody>
-                <form action={submit}>
+                <form
+                  action={submit}
+                  className='border border-default-100 shadow-lg rounded-md p-3 flex flex-col gap-2'
+                >
                   <Input type='text' name='orderName' label='Order Name' />
                   <Input type='text' name='customer' label='Customer' />
                   <Switch aria-label='Order Delivered?' name='status' size='md'>
@@ -84,6 +99,7 @@ export default function NewOrderModal() {
                         isClearable
                         type='text'
                         label='Product'
+                        name='productName'
                         value={item.product}
                         onChange={(e) =>
                           updateItem(item.id, 'product', e.target.value)
@@ -144,11 +160,9 @@ export default function NewOrderModal() {
                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
+                  <Submit label={'Submit'} onPress={onClose} />
+                  {formState?.message && <p>{formState.message}</p>}
                 </form>
-                {formState?.message && <p>{formState.message}</p>}
-                <Button color='primary' disabled={pending}>
-                  Submit
-                </Button>
               </ModalBody>
               <ModalFooter>
                 <Button color='danger' variant='light' onPress={onClose}>
@@ -159,6 +173,6 @@ export default function NewOrderModal() {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 }

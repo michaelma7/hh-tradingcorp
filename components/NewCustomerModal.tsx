@@ -12,12 +12,11 @@ import {
 import { createCustomer } from '@/actions/customers';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
-import { userFormState } from './SignupForm';
 
 export default function NewOrderModal() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit, pending] = useActionState<userFormState>(
+  const [formState, submit, pending] = useActionState(
     createCustomer,
     initState
   );

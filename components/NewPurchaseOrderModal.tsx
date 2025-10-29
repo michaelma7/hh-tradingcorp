@@ -16,12 +16,11 @@ import {
 import { createPurchaseOrder } from '@/actions/purchaseOrders';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
-import { userFormState } from './SignupForm';
 
 export default function NewOrderModal() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit, pending] = useActionState<userFormState>(
+  const [formState, submit, pending] = useActionState(
     createPurchaseOrder,
     initState
   );

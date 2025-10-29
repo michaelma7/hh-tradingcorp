@@ -19,7 +19,7 @@ export default function SigninForm() {
   return (
     <form
       action={submit}
-      className='bg-content1 border border-default-100 shadow-lg rounded-md p-3 flex flex-col gap-2 '
+      className='border border-default-100 shadow-lg rounded-md p-3 flex flex-col gap-2 '
     >
       <h3 className='my-4 font-semibold'>Sign in</h3>
       <Input
