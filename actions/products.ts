@@ -3,7 +3,6 @@ import { db } from '@/db/db';
 import { eq, asc, sql } from 'drizzle-orm';
 import { products, inventoryTransactions } from '@/db/schema';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
 import { unstable_cache } from 'next/cache';
 
 export interface productData {
@@ -13,7 +12,6 @@ export interface productData {
   imageLink?: string;
   quantity: number;
   reserved: number;
-  lastUpdated: string;
 }
 
 export type transactionType = 'received' | 'ordered' | 'returned' | 'sale';
@@ -24,54 +22,77 @@ export interface inventoryTransaction {
   referenceId: string;
 }
 
-export async function createProduct(data: productData) {
-  const {
-    name,
-    commonName,
-    manufacturedBy,
-    imageLink,
-    quantity,
-    reserved,
-    lastUpdated,
-  } = data;
-  // validate data
-  if (name === null || typeof name !== 'string') {
-    console.error('Data type not supported');
-  }
+const productSchema = z.object({
+  name: z.string(),
+  commonName: z.string().optional().or(z.literal('')),
+  manufacturedBy: z.string(),
+  quantity: z.number(),
+  reserved: z.number(),
+  imageLink: z.string().url('Must be valid URL').optional().or(z.literal('')),
+});
+
+const updateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  commonName: z.string().optional().or(z.literal('')),
+  manufacturedBy: z.string(),
+  quantity: z.number(),
+  reserved: z.number(),
+  imageLink: z.string().url('Must be valid URL').optional().or(z.literal('')),
+});
+
+export async function createProduct(prevState: any, formData: FormData) {
   try {
+    const data = productSchema.parse({
+      name: formData.get('name'),
+      commonName: formData.get('commonName'),
+      manufacturedBy: formData.get('manufacturedBy'),
+      imageLink: formData.get('imageLink'),
+      quantity: formData.get('quantity'),
+      reserved: formData.get('reserved'),
+    });
+
     return await db
       .insert(products)
       .values({
-        name: name,
-        commonName: commonName,
-        manufacturedBy: manufacturedBy,
-        imageLink: imageLink,
-        quantity: quantity,
-        reserved: reserved,
-        lastUpdated: lastUpdated,
+        name: data.name,
+        commonName: data.commonName,
+        manufacturedBy: data.manufacturedBy,
+        imageLink: data.imageLink,
+        quantity: data.quantity,
+        reserved: data.reserved,
       })
       .onConflictDoNothing()
       .returning({ newId: products.id });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Insertion error: ${err}`);
     throw err;
   }
 }
 
-export async function updateProduct(productId: string, data: productData) {
-  const { name, commonName, manufacturedBy, imageLink } = data;
-  // validate data
+export async function updateProduct(prevState: any, formData: FormData) {
   try {
+    const data = updateSchema.parse({
+      id: formData.get('id'),
+      name: formData.get('name'),
+      commonName: formData.get('commonName'),
+      manufacturedBy: formData.get('manufacturedBy'),
+      imageLink: formData.get('imageLink'),
+      quantity: formData.get('quantity'),
+      reserved: formData.get('reserved'),
+    });
     await db
       .update(products)
       .set({
-        name: name,
-        commonName: commonName,
-        manufacturedBy: manufacturedBy,
-        imageLink: imageLink,
+        name: data.name,
+        commonName: data.commonName,
+        manufacturedBy: data.manufacturedBy,
+        imageLink: data.imageLink,
       })
-      .where(eq(products.id, `${productId}`));
+      .where(eq(products.id, `${data.id}`));
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Update Error ${err}`);
     throw err;
   }
@@ -149,7 +170,14 @@ export const getProductsForDashboard = unstable_cache(
 export async function getOneProduct(productId: string) {
   try {
     return await db
-      .select()
+      .select({
+        Name: products.name,
+        Quantity: products.quantity,
+        Reserved: products.reserved,
+        Current: products.current,
+        Manufacturer: products.manufacturedBy,
+        Image: products.imageLink,
+      })
       .from(products)
       .where(eq(products.id, `${productId}`));
   } catch (err) {
@@ -160,7 +188,15 @@ export async function getOneProduct(productId: string) {
 
 export async function getAllProducts() {
   try {
-    return await db.select().from(products);
+    return await db
+      .select({
+        Name: products.name,
+        Quantity: products.quantity,
+        Reserved: products.reserved,
+        Current: products.current,
+        Manufacturer: products.manufacturedBy,
+      })
+      .from(products);
   } catch (err) {
     console.error(`Product data fetch error ${err}`);
     throw err;
