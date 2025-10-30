@@ -3,52 +3,65 @@ import { db } from '@/db/db';
 import { eq, asc } from 'drizzle-orm';
 import { manufacturers } from '@/db/schema';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
 import { unstable_cache } from 'next/cache';
 
 export interface manufacturerData {
   name: string;
   contact: string;
 }
-// TODO
-// need to type everything
-export async function createManfacturer(data: manufacturerData) {
-  const { name, contact } = data;
-  // validate data
-  if (name === null || typeof name !== 'string') {
-    console.error('Data type not supported');
-    return;
-  }
+
+const manufacturerSchema = z.object({
+  name: z.string().trim(),
+  contact: z.string().trim(),
+});
+
+const updateSchema = manufacturerSchema.extend({
+  id: z.string().uuid(),
+});
+
+export async function createManfacturer(prevState: any, data: FormData) {
   try {
+    const newManu: manufacturerData = manufacturerSchema.parse({
+      name: data.get('name'),
+      contact: data.get('contact'),
+    });
+    if (newManu.name === null || typeof newManu.name !== 'string') {
+      console.error('Data type not supported');
+      throw Error;
+    }
     await db
       .insert(manufacturers)
       .values({
-        name: name,
-        contact: contact,
+        name: newManu.name,
+        contact: newManu.contact,
       })
       .onConflictDoNothing()
       .returning({ newId: manufacturers.id });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Insertion error: ${err}`);
+    throw err;
   }
-  return;
 }
 
-export async function updateManfacturer(
-  manuId: number,
-  data: manufacturerData
-) {
-  const { name, contact } = data;
+export async function updateManfacturer(prevState: any, data: FormData) {
+  const update = updateSchema.parse({
+    id: data.get('id'),
+    name: data.get('name'),
+    contact: data.get('contact'),
+  });
   try {
     await db
       .update(manufacturers)
       .set({
-        name: name,
-        contact: contact,
+        name: update.name,
+        contact: update.contact,
       })
-      .where(eq(manufacturers.id, `${manuId}`));
+      .where(eq(manufacturers.id, `${update.id}`));
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Update Error ${err}`);
+    throw err;
   }
 }
 

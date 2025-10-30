@@ -23,22 +23,28 @@ export interface inventoryTransaction {
 }
 
 const productSchema = z.object({
-  name: z.string(),
+  name: z.string().trim(),
   commonName: z.string().optional().or(z.literal('')),
-  manufacturedBy: z.string(),
+  manufacturedBy: z.string().trim(),
   quantity: z.number(),
   reserved: z.number(),
-  imageLink: z.string().url('Must be valid URL').optional().or(z.literal('')),
+  imageLink: z
+    .string()
+    .url('Must be valid URL')
+    .trim()
+    .optional()
+    .or(z.literal('')),
 });
 
-const updateSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  commonName: z.string().optional().or(z.literal('')),
-  manufacturedBy: z.string(),
+const updateSchema = productSchema.extend({
+  id: z.string().uuid(),
+});
+
+const inventorySchema = z.object({
+  id: z.string().uuid(),
+  referenceId: z.string(),
   quantity: z.number(),
-  reserved: z.number(),
-  imageLink: z.string().url('Must be valid URL').optional().or(z.literal('')),
+  transaction: z.enum(['received', 'ordered', 'returned', 'sale']),
 });
 
 export async function createProduct(prevState: any, formData: FormData) {
@@ -98,46 +104,48 @@ export async function updateProduct(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateInventory(data: inventoryTransaction) {
-  const { productId, transaction, quantity, referenceId } = data;
-  // validate data
+export async function updateInventory(data: FormData) {
   try {
     return await db.transaction(async (tx) => {
-      const newTransaction = {
-        productId: productId,
-        transaction: transaction,
-        quantity: quantity,
-        referenceId: referenceId,
-      };
+      const validData = inventorySchema.parse({
+        id: data.get('productId'),
+        transaction: data.get('transaction'),
+        quantity: data.get('quantity'),
+        referenceId: data.get('referenceId'),
+      });
 
       const [newId] = await tx
         .insert(inventoryTransactions)
-        .values(newTransaction)
+        .values(validData)
         .onConflictDoNothing()
         .returning({ id: inventoryTransactions.id });
 
-      if (transaction === 'received' || transaction === 'returned') {
+      if (
+        validData.transaction === 'received' ||
+        validData.transaction === 'returned'
+      ) {
         await tx
           .update(products)
-          .set({ quantity: sql`${products.quantity} + ${quantity}` })
-          .where(eq(products.id, `${productId}`));
-      } else if (transaction === 'ordered') {
+          .set({ quantity: sql`${products.quantity} + ${validData.quantity}` })
+          .where(eq(products.id, `${validData.id}`));
+      } else if (validData.transaction === 'ordered') {
         await tx
           .update(products)
-          .set({ reserved: sql`${products.reserved} + ${quantity}` })
-          .where(eq(products.id, `${productId}`));
+          .set({ reserved: sql`${products.reserved} + ${validData.quantity}` })
+          .where(eq(products.id, `${validData.id}`));
       } else {
         await tx
           .update(products)
           .set({
-            quantity: sql`${products.quantity} - ${quantity}`,
-            reserved: sql`${products.reserved} - ${quantity}`,
+            quantity: sql`${products.quantity} - ${validData.quantity}`,
+            reserved: sql`${products.reserved} - ${validData.quantity}`,
           })
-          .where(eq(products.id, `${productId}`));
+          .where(eq(products.id, `${validData.id}`));
       }
       return newId;
     });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Inventory update error ${err}`);
     throw err;
   }
@@ -157,6 +165,7 @@ export const getProductsForDashboard = unstable_cache(
     const data = await db.query.products.findMany({
       orderBy: [asc(products.lastUpdated)],
       limit: 25,
+      columns: { lastUpdated: false },
     });
     return data ?? [];
   },
