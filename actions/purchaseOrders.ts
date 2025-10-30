@@ -1,10 +1,9 @@
 'use server';
 import { db } from '@/db/db';
 import { eq, asc, and } from 'drizzle-orm';
-import { purchaseOrders, purchaseOrderItems, products } from '@/db/schema';
+import { purchaseOrders, purchaseOrderItems } from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
 import { unstable_cache } from 'next/cache';
 
 export interface purchaseOrderData {
@@ -25,20 +24,33 @@ export type purchaseOrderItemChanges = {
   remove: purchaseOrderItem[];
 };
 
-export async function createPurchaseOrder(
-  data: purchaseOrderData,
-  items: purchaseOrderItem[]
-) {
-  const { orderDate, status } = data;
-  // validate data
-  if (status === null || typeof status !== 'string') {
-    console.error('Data type not supported');
-  }
+const purchaseOrderItemSchema = z.object({
+  purchaseOrderId: z.string().uuid(),
+  productId: z.string().uuid(),
+  quantity: z.number(),
+  priceCents: z.number(),
+  expirationDate: z.string(),
+});
+
+const itemsSchema = z.array(purchaseOrderItemSchema);
+
+const purchaseOrderSchema = z.object({
+  orderDate: z.string(),
+  status: z.enum(['received', 'shipped', 'pending']),
+  items: itemsSchema,
+});
+
+const updateSchema = purchaseOrderSchema.extend({
+  id: z.string().uuid(),
+});
+
+export async function createPurchaseOrder(data: FormData) {
   try {
+    const purchaseOrder = purchaseOrderSchema.parse(data);
     return await db.transaction(async (tx) => {
       const newPurchaseOrder: typeof purchaseOrders.$inferInsert = {
-        orderDate: orderDate,
-        status: status,
+        orderDate: purchaseOrder.orderDate,
+        status: purchaseOrder.status,
       };
 
       const [newId] = await tx
@@ -47,7 +59,7 @@ export async function createPurchaseOrder(
         .onConflictDoNothing()
         .returning({ id: purchaseOrders.id });
 
-      const itemsWithId = items.map((item) => ({
+      const itemsWithId = purchaseOrder.items.map((item) => ({
         purchaseOrderId: newId.id,
         productId: item.productId,
         quantity: item.quantity || 0,
@@ -62,46 +74,41 @@ export async function createPurchaseOrder(
       return { newId };
     });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Insertion error: ${err}`);
     throw err;
   }
 }
 
-export async function updatePurchaseOrder(
-  purchaseOrderId: string,
-  data: purchaseOrderData
-) {
-  const { orderDate, status } = data;
-  // validate data
-  if (status === null || typeof status !== 'string') {
-    console.error('Data type not supported');
-  }
+export async function updatePurchaseOrder(data: FormData) {
   try {
+    const update = updateSchema.parse(data);
     // make inventory transactions and update product inventory for each item
     await db.transaction(async (tx) => {
       tx.update(purchaseOrders)
         .set({
-          orderDate: orderDate,
-          status: status,
+          orderDate: update.orderDate,
+          status: update.status,
         })
-        .where(eq(purchaseOrders.id, `${purchaseOrderId}`));
-      if (status === 'received') {
+        .where(eq(purchaseOrders.id, `${update.id}`));
+      if (update.status === 'received') {
         const items = await tx
           .select()
           .from(purchaseOrderItems)
-          .where(eq(purchaseOrderItems.purchaseOrderId, `${purchaseOrderId}`));
+          .where(eq(purchaseOrderItems.purchaseOrderId, `${update.id}`));
         for (const item of items) {
           const receivedItem = {
             productId: item.productId,
             transaction: 'received',
             quantity: item.quantity!,
-            referenceId: purchaseOrderId,
+            referenceId: update.id,
           } as const;
           await updateInventory(receivedItem);
         }
       }
     });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Update Error ${err}`);
     throw err;
   }
@@ -111,13 +118,9 @@ export async function modifyPurchaseOrderItems(
   purchaseOrderId: string,
   data: purchaseOrderItemChanges
 ) {
-  const { addOrUpdate, remove } = data;
-  if (addOrUpdate.length + remove.length === 0)
-    throw new Error('No data detected');
-  else if (addOrUpdate.length + remove.length > 100)
-    throw new Error('Too many lines detected');
-
   try {
+    const addOrUpdate = itemsSchema.parse(data.addOrUpdate);
+    const remove = itemsSchema.parse(data.remove);
     await db.transaction(async (tx) => {
       // insert/update each new item
       if (addOrUpdate.length) {
@@ -143,9 +146,9 @@ export async function modifyPurchaseOrderItems(
               )
             );
       }
-      return;
     });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error('PurchaseOrderItems update error', err);
     throw err;
   }

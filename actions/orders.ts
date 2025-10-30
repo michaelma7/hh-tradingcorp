@@ -1,10 +1,9 @@
 'use server';
 import { db } from '@/db/db';
 import { eq, asc, and } from 'drizzle-orm';
-import { orders, orderItems, products, customers } from '@/db/schema';
+import { orders, orderItems } from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
 import { unstable_cache } from 'next/cache';
 
 export interface orderData {
@@ -27,23 +26,45 @@ export type orderItemChanges = {
   remove: orderItemData[];
 };
 
-// function dataValidation(data: orderData | orderItemData): void {}
+const orderItemSchema = z.object({
+  orderId: z.string().uuid(),
+  productId: z.string().uuid(),
+  quantity: z.number().optional(),
+  priceCents: z.number().optional(),
+});
 
-export async function createOrder(data: orderData, items: orderItemData[]) {
-  const { name, createdById, customerId, totalCents, status } = data;
-  // validate data
-  if (name === null || typeof name !== 'string') {
-    console.error('Data type not supported');
-    return;
-  }
+const orderItemsSchema = z.array(orderItemSchema);
+
+const orderSchema = z.object({
+  name: z.string().trim(),
+  createdById: z.string().uuid(),
+  customerId: z.string().uuid().optional(),
+  totalCents: z.number(),
+  status: z.boolean(),
+  items: orderItemsSchema,
+});
+
+const updateSchema = orderSchema.extend({
+  id: z.string().uuid(),
+});
+
+export async function createOrder(data: FormData) {
   try {
+    const order = orderSchema.parse({
+      name: data.get('name'),
+      createdById: data.get('createdBy'),
+      customerId: data.get('customer'),
+      totalCents: data.get('total'),
+      status: data.get('status'),
+      items: data.get('items'),
+    });
     return await db.transaction(async (tx) => {
       const newOrder: typeof orders.$inferInsert = {
-        name: name,
-        createdById: createdById,
-        customerId: customerId,
-        status: status,
-        totalCents: totalCents,
+        name: order.name,
+        createdById: order.createdById,
+        customerId: order.customerId,
+        status: order.status,
+        totalCents: order.totalCents,
       };
 
       const [newId] = await tx
@@ -52,7 +73,7 @@ export async function createOrder(data: orderData, items: orderItemData[]) {
         .onConflictDoNothing()
         .returning({ id: orders.id });
 
-      const itemsWithId = items.map((item) => ({
+      const itemsWithId = order.items.map((item) => ({
         orderId: newId.id,
         productId: item.productId,
         quantity: item.quantity || 0,
@@ -61,7 +82,7 @@ export async function createOrder(data: orderData, items: orderItemData[]) {
 
       await tx.insert(orderItems).values(itemsWithId).onConflictDoNothing();
 
-      const inventoryChanges = items.map(
+      const inventoryChanges = order.items.map(
         (item) =>
           ({
             productId: item.productId,
@@ -74,50 +95,54 @@ export async function createOrder(data: orderData, items: orderItemData[]) {
       return { newId };
     });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Order insertion error: ${err}`);
     throw err;
   }
 }
 
-export async function updateOrder(orderId: string, data: orderData) {
-  const { name, createdById, customerId, totalCents, status } = data;
-  // validate data
-  if (name === null || typeof name !== 'string') {
-    console.error('Data type not supported');
-    throw new Error('Data type not supported');
-  }
-
+export async function updateOrder(data: FormData) {
   try {
+    const order = updateSchema.parse({
+      id: data.get('id'),
+      name: data.get('name'),
+      createdById: data.get('createdBy'),
+      customerId: data.get('customer'),
+      totalCents: data.get('total'),
+      status: data.get('status'),
+    });
     const updatedOrder: typeof orders.$inferInsert = {
-      name: name,
-      createdById: createdById,
-      customerId: customerId,
-      status: status,
-      totalCents: totalCents,
+      id: order.id,
+      name: order.name,
+      createdById: order.createdById,
+      customerId: order.customerId,
+      status: order.status,
+      totalCents: order.totalCents,
     };
     await db.transaction(async (tx) => {
       await tx
         .update(orders)
         .set(updatedOrder)
-        .where(eq(orders.id, `${orderId}`))
+        .where(eq(orders.id, `${updatedOrder.id}`))
         .returning({ id: orders.id });
-      if (status) {
+      if (updatedOrder.status) {
         const items = await tx
           .select()
           .from(orderItems)
-          .where(eq(orderItems.orderId, `${orderId}`));
+          .where(eq(orderItems.orderId, `${updatedOrder.id}`));
         for (const item of items) {
           const deliveredItem = {
             productId: item.productId,
             transaction: 'sale',
             quantity: item.quantity!,
-            referenceId: orderId,
+            referenceId: updatedOrder.id,
           } as const;
           await updateInventory(deliveredItem);
         }
       }
     });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Order update Error ${err}`);
     throw err;
   }
@@ -127,13 +152,9 @@ export async function modifyOrderItems(
   orderId: string,
   data: orderItemChanges
 ) {
-  const { addOrUpdate, remove } = data;
-  if (addOrUpdate.length + remove.length === 0)
-    throw new Error('No data detected');
-  else if (addOrUpdate.length + remove.length > 100)
-    throw new Error('Too many lines detected');
-
   try {
+    const addOrUpdate = orderItemsSchema.parse(data.addOrUpdate);
+    const remove = orderItemsSchema.parse(data.remove);
     return await db.transaction(async (tx) => {
       // insert/update each new item
       if (addOrUpdate.length) {
@@ -161,6 +182,7 @@ export async function modifyOrderItems(
       }
     });
   } catch (err) {
+    if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error('OrderItems update error', err);
     throw err;
   }
@@ -200,11 +222,6 @@ export async function getOneOrder(orderId: string) {
       where: eq(orders.id, orderId),
       with: {
         ordersToOrderItems: true,
-        // {
-        //   // quantity: true,
-        //   // priceCents: true,
-        //   // subtotal: true,
-        // },
         customers: true,
       },
     });
