@@ -18,7 +18,7 @@ const lastUpdated = () =>
     .default(sql`(CURRENT_TIMESTAMP)`)
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`);
 
-const date = (name: string) => text(name);
+const date = (name: string) => text(name).default(sql`(CURRENT_DATE)`);
 
 const boolean = (field: string) => integer(field, { mode: 'boolean' });
 
