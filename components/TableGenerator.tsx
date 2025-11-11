@@ -6,15 +6,42 @@ import {
   TableColumn,
   TableRow,
   TableHeader,
-  getKeyValue,
 } from '@heroui/table';
+import Link from 'next/link';
+import { CirclePlus } from 'lucide-react';
 
-export default function TableGenerator({ data, label, className }) {
+export default function TableGenerator({ data, label, className, link }) {
   if (data) {
     const columnArr = Object.keys(data[0]);
     const tableColumns = [];
-    for (let i = 0; i < columnArr.length; i++)
+    for (let i = 0; i < columnArr.length; i++) {
+      if (columnArr[i] === 'id') {
+        tableColumns.push({ id: 'details', label: 'Details' });
+        continue;
+      }
       tableColumns.push({ id: columnArr[i], label: columnArr[i] });
+    }
+    const rows = [];
+    const linkStr = `/dashboard/${link}/`;
+    for (const row of data) {
+      const rowCells = [];
+      const vals = Object.values(row);
+      for (let i = 0; i < vals.length; i++) {
+        if (i === vals.length - 1) {
+          const rowLinkStr = linkStr + `${row.id}`;
+          rowCells.push(
+            <TableCell>
+              <Link href={rowLinkStr}>
+                <CirclePlus size={16} />
+              </Link>
+            </TableCell>
+          );
+          continue;
+        }
+        rowCells.push(<TableCell>{vals[i]}</TableCell>);
+      }
+      rows.push(<TableRow key={row.id}>{rowCells}</TableRow>);
+    }
     return (
       <Table aria-label={label} className={className}>
         <TableHeader columns={tableColumns}>
@@ -23,13 +50,7 @@ export default function TableGenerator({ data, label, className }) {
           )}
         </TableHeader>
         <TableBody items={data} emptyContent={'No rows to display'}>
-          {(item) => (
-            <TableRow key={item.id}>
-              {(columnKey) => (
-                <TableCell>{getKeyValue(item, columnKey)}</TableCell>
-              )}
-            </TableRow>
-          )}
+          {rows}
         </TableBody>
       </Table>
     );
