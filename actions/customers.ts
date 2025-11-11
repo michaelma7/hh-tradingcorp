@@ -94,7 +94,13 @@ export async function getOneCustomer(customerId: string) {
 
 export async function getAllCustomers() {
   try {
-    return await db.select().from(customers);
+    return await db
+      .select({
+        Name: customers.name,
+        Location: customers.location,
+        id: customers.id,
+      })
+      .from(customers);
   } catch (err) {
     console.error(`Product data fetch error ${err}`);
     throw err;

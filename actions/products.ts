@@ -204,6 +204,7 @@ export async function getAllProducts() {
         Reserved: products.reserved,
         Current: products.current,
         Manufacturer: products.manufacturedBy,
+        id: products.id,
       })
       .from(products);
   } catch (err) {
