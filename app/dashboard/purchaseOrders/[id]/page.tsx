@@ -1,14 +1,17 @@
 import { getOnePurchaseOrder } from '@/actions/purchaseOrders';
-import DisplayOneItem from '@/components/DisplayOneItem';
 import { redirect } from 'next/navigation';
 
-export default async function PurchaseOrderPage({ params }) {
-  const purchaseOrder = await getOnePurchaseOrder(params.id);
+export default async function PurchaseOrderPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const [purchaseOrder] = await getOnePurchaseOrder(id);
   if (!purchaseOrder) redirect('/dashboard/purchaseOrders');
   return (
     <div>
-      <DisplayOneItem></DisplayOneItem>
-      <h2>{params.id}</h2>
+      <h2>{purchaseOrder.id}</h2>
     </div>
   );
 }
