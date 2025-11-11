@@ -119,7 +119,6 @@ export async function signInUser(prevState: any, formData: FormData) {
       email: formData.get('email'),
       password: formData.get('password'),
     });
-    console.log(formData);
     if (!data.success) return { errors: data.error.flatten().fieldErrors };
     await signin(data);
   } catch (err) {
