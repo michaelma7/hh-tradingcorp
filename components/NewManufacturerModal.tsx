@@ -50,11 +50,11 @@ export default function NewOrderModal() {
                     label='Contact'
                     className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
+                  <Button color='primary' disabled={pending}>
+                    Submit
+                  </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
-                <Button color='primary' disabled={pending}>
-                  Submit
-                </Button>
               </ModalBody>
               <ModalFooter>
                 <Button color='danger' variant='light' onPress={onClose}>

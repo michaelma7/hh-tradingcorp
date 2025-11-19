@@ -147,11 +147,11 @@ export default function NewOrderModal() {
                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
+                  <Button color='primary' disabled={pending}>
+                    Submit
+                  </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
-                <Button color='primary' disabled={pending}>
-                  Submit
-                </Button>
               </ModalBody>
               <ModalFooter>
                 <Button color='danger' variant='light' onPress={onClose}>

@@ -9,6 +9,7 @@ import {
   Button,
   Input,
 } from '@heroui/react';
+import Submit from '@/components/Submit';
 import { createCustomer } from '@/actions/customers';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
@@ -16,10 +17,7 @@ import { CirclePlus } from 'lucide-react';
 export default function NewOrderModal() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit, pending] = useActionState(
-    createCustomer,
-    initState
-  );
+  const [formState, submit] = useActionState(createCustomer, initState);
 
   return (
     <>
@@ -50,11 +48,9 @@ export default function NewOrderModal() {
                     label='Location'
                     className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
+                  <Submit label='Submit' />
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
-                <Button color='primary' disabled={pending}>
-                  Submit
-                </Button>
               </ModalBody>
               <ModalFooter>
                 <Button color='danger' variant='light' onPress={onClose}>
