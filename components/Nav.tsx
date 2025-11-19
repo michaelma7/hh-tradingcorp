@@ -2,8 +2,10 @@
 import { Button, Input } from '@heroui/react';
 import { signout } from '@/actions/auth';
 import Link from 'next/link';
+import { useProvider } from '@/app/CurrentUserProvider';
 
 export default function Nav() {
+  const { currentUser } = useProvider();
   return (
     <nav className='h-[65px] border-b border-default-50 flex items-center px-6 gap-4'>
       <div>
@@ -19,6 +21,7 @@ export default function Nav() {
       </div>
       <div className='w-1/2'>
         <Input placeholder='search' />
+        <span id='username'>{currentUser}</span>
       </div>
     </nav>
   );
