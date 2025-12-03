@@ -1,15 +1,15 @@
 'use server';
 import { db } from '@/db/db';
 import { eq, asc, and } from 'drizzle-orm';
-import { orders, orderItems } from '@/db/schema';
+import { orders, orderItems, products, customers, users } from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
 
 export interface orderData {
   name: string;
-  createdById: string;
-  customerId?: string;
+  createdBy: string;
+  customer: string;
   totalCents: number;
   status: boolean;
 }
@@ -28,41 +28,49 @@ export type orderItemChanges = {
 
 const orderItemSchema = z.object({
   orderId: z.string().uuid(),
-  productId: z.string().uuid(),
-  quantity: z.number().optional(),
-  priceCents: z.number().optional(),
+  productId: z.string(),
+  quantity: z.coerce.number().optional(),
+  priceCents: z.coerce.number().optional(),
 });
 
 const orderItemsSchema = z.array(orderItemSchema);
 
 const orderSchema = z.object({
   name: z.string().trim(),
-  createdById: z.string().uuid(),
-  customerId: z.string().uuid().optional(),
-  totalCents: z.number(),
-  status: z.boolean(),
-  items: orderItemsSchema,
+  createdBy: z.string(),
+  customer: z.string(),
+  totalCents: z.coerce.number(),
+  status: z.coerce.boolean(),
 });
 
 const updateSchema = orderSchema.extend({
   id: z.string().uuid(),
 });
 
-export async function createOrder(data: FormData) {
+export async function createOrder(prevState: any, formData: FormData) {
   try {
-    const order = orderSchema.parse({
-      name: data.get('name'),
-      createdById: data.get('createdBy'),
-      customerId: data.get('customer'),
-      totalCents: data.get('total'),
-      status: data.get('status'),
-      items: data.get('items'),
-    });
+    const data = {
+      name: formData.get('name'),
+      createdBy: formData.get('createdBy'),
+      customer: formData.get('customer'),
+      totalCents: Number(formData.get('totalCents')),
+      status: JSON.parse(formData.get('status')),
+    };
+    const order = orderSchema.parse(data);
+
     return await db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ userId: users.id })
+        .from(users)
+        .where(eq(users.email, order.createdBy));
+      const [customer] = await tx
+        .select({ id: customers.id })
+        .from(customers)
+        .where(eq(customers.name, order.customer));
       const newOrder: typeof orders.$inferInsert = {
         name: order.name,
-        createdById: order.createdById,
-        customerId: order.customerId,
+        createdById: user.userId,
+        customerId: customer.id,
         status: order.status,
         totalCents: order.totalCents,
       };
@@ -73,25 +81,47 @@ export async function createOrder(data: FormData) {
         .onConflictDoNothing()
         .returning({ id: orders.id });
 
-      const itemsWithId = order.items.map((item) => ({
-        orderId: newId.id,
-        productId: item.productId,
-        quantity: item.quantity || 0,
-        priceCents: item.priceCents || 0,
-      }));
+      // order line item data
+      const itemData = {
+        productName: formData.getAll('productName'),
+        quantity: formData.getAll('quantity'),
+        price: formData.getAll('price'),
+      };
+      // check for items
+      if (itemData.productName[0] === '') return { newId };
+      else {
+        // switch product names to product ids
+        const productId = [];
+        for (let i = 0; i < itemData.productName.length; i++) {
+          const [id] = await tx
+            .select({ id: products.id })
+            .from(products)
+            .where(eq(products.name, itemData.productName[i]));
+          productId.push(id.id);
+        }
+        const items = [];
+        for (let i = 0; i < productId.length; i++) {
+          items.push({
+            orderId: newId.id,
+            productId: productId[i],
+            quantity: itemData.quantity[i],
+            priceCents: Number(itemData.price[i]) * 100,
+          });
+        }
+        const verifiedItems = orderItemsSchema.parse(items);
 
-      await tx.insert(orderItems).values(itemsWithId).onConflictDoNothing();
-
-      const inventoryChanges = order.items.map(
-        (item) =>
-          ({
-            productId: item.productId,
-            transaction: 'ordered',
-            quantity: item.quantity!,
-            referenceId: newId.id,
-          } as const)
-      );
-      for (const change of inventoryChanges) await updateInventory(change);
+        await tx.insert(orderItems).values(verifiedItems).onConflictDoNothing();
+        const inventoryChanges = verifiedItems.map(
+          (item) =>
+            ({
+              productId: item.productId,
+              transaction: 'ordered',
+              quantity: item.quantity!,
+              referenceId: item.orderId,
+            } as const)
+        );
+        for (const change of inventoryChanges) await updateInventory(change);
+      }
       return { newId };
     });
   } catch (err) {
@@ -235,7 +265,7 @@ export async function getAllOrders() {
   try {
     return await db.select().from(orders);
   } catch (err) {
-    console.error(`Product data fetch error ${err}`);
+    console.error(`Order data fetch error ${err}`);
     throw err;
   }
 }
