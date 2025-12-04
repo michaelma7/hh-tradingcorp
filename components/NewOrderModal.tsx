@@ -9,21 +9,18 @@ import {
 } from '@heroui/modal';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
-import { Switch } from '@heroui/switch';
+import { Checkbox } from '@heroui/react';
 import { NumberInput } from '@heroui/number-input';
 import { createOrder } from '@/actions/orders';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
 import Submit from './Submit';
+import { useProvider } from '@/app/CurrentUserProvider';
 
 export default function NewOrderModal() {
+  const { currentUser } = useProvider();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const initState = { message: null };
-  const [formState, submit] = useActionState<{ message: string | null }>(
-    createOrder,
-    initState
-  );
-
+  const [deliveryStatus, setDeliveryStatus] = useState(false);
   const [items, setItems] = useState([
     { id: 1, product: '', quantity: 0, price: 0, subtotal: 0 },
   ]);
@@ -49,6 +46,14 @@ export default function NewOrderModal() {
     0
   );
 
+  const formSubmit = (prevState: any, formData: FormData) => {
+    formData.append('totalCents', JSON.stringify(total * 100));
+    formData.set('status', JSON.stringify(deliveryStatus));
+    createOrder(prevState, formData);
+  };
+
+  const [formState, submit] = useActionState(formSubmit, null);
+
   return (
     <div>
       <Button
@@ -61,12 +66,7 @@ export default function NewOrderModal() {
       >
         Create New Order <CirclePlus size={16} />
       </Button>
-      <Modal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        className='bg-white'
-        placement='top'
-      >
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className='bg-white'>
         <ModalContent>
           {(onClose) => (
             <>
@@ -78,11 +78,36 @@ export default function NewOrderModal() {
                   action={submit}
                   className='border border-default-100 shadow-lg rounded-md p-3 flex flex-col gap-2'
                 >
-                  <Input type='text' name='orderName' label='Order Name' />
-                  <Input type='text' name='customer' label='Customer' />
-                  <Switch aria-label='Order Delivered?' name='status' size='md'>
+                  <Input
+                    type='text'
+                    name='name'
+                    label='Order Name'
+                    isRequired
+                  />
+                  <Input
+                    type='text'
+                    name='customer'
+                    label='Customer'
+                    isRequired
+                  />
+                  <Checkbox
+                    aria-label='Order Delivered?'
+                    name='status'
+                    size='sm'
+                    radius='full'
+                    isSelected={deliveryStatus}
+                    onValueChange={setDeliveryStatus}
+                  >
                     Delivered?
-                  </Switch>
+                  </Checkbox>
+                  <Input
+                    type='text'
+                    name='createdBy'
+                    label='Username'
+                    isReadOnly
+                    defaultValue={currentUser}
+                    className='col-span-5 px-3 py-2 border border-gray-300 rounded-md'
+                  />
                   <div className='grid grid-cols-12 gap-4 font-semibold text-gray-700 text-sm'>
                     <div className='col-span-5'>Product Name</div>
                     <div className='col-span-2'>Quantity</div>
@@ -157,11 +182,10 @@ export default function NewOrderModal() {
                   <div className='flex justify-end'>
                     <div className='flex justify-between text-gray-900 pt-3 border-t'>
                       <span>Total:</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span id='total'>${total.toFixed(2)}</span>
                     </div>
                   </div>
                   <Submit label={'Submit'} onPress={onClose} />
-                  {formState?.message && <p>{formState.message}</p>}
                 </form>
               </ModalBody>
               <ModalFooter>
