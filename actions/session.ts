@@ -32,13 +32,14 @@ export async function getUserFromToken() {
   const session = (await cookies()).get('session')?.value;
   const payload = await decrypt(session);
   const user = await db.query.users.findFirst({
-    where: eq(users.id, payload!.id),
+    where: eq(users.id, payload!.userId),
     columns: {
       id: true,
       email: true,
     },
   });
 
+  if (!user) return null;
   return user;
 }
 
