@@ -10,7 +10,19 @@ import {
 import Link from 'next/link';
 import { CirclePlus } from 'lucide-react';
 
-export default function TableGenerator({ data, label, className, link }) {
+type Props = {
+  data: any;
+  label: string;
+  className: string;
+  link: string;
+};
+
+export default function TableGenerator({
+  data,
+  label,
+  className,
+  link,
+}: Props) {
   if (data) {
     const columnArr = Object.keys(data[0]);
     const tableColumns = [];
