@@ -5,6 +5,7 @@ import { orders, orderItems, products, customers, users } from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export interface orderData {
   name: string;
@@ -91,19 +92,15 @@ export async function createOrder(prevState: any, formData: FormData) {
       if (itemData.productName[0] === '') return { newId };
       else {
         // switch product names to product ids
-        const productId = [];
+        const items = [];
         for (let i = 0; i < itemData.productName.length; i++) {
           const [id] = await tx
             .select({ id: products.id })
             .from(products)
             .where(eq(products.name, itemData.productName[i]));
-          productId.push(id.id);
-        }
-        const items = [];
-        for (let i = 0; i < productId.length; i++) {
           items.push({
             orderId: newId.id,
-            productId: productId[i],
+            productId: id.id,
             quantity: itemData.quantity[i],
             priceCents: Number(itemData.price[i]) * 100,
           });
@@ -111,18 +108,17 @@ export async function createOrder(prevState: any, formData: FormData) {
         const verifiedItems = orderItemsSchema.parse(items);
 
         await tx.insert(orderItems).values(verifiedItems).onConflictDoNothing();
-        const inventoryChanges = verifiedItems.map(
-          (item) =>
-            ({
-              productId: item.productId,
-              transaction: 'ordered',
-              quantity: item.quantity!,
-              referenceId: item.orderId,
-            } as const)
-        );
-        for (const change of inventoryChanges) await updateInventory(change);
+        for (const item of verifiedItems) {
+          const change = {
+            productId: item.productId,
+            transaction: 'ordered',
+            quantity: item.quantity!,
+            referenceId: item.orderId,
+          };
+          await updateInventory(change);
+        }
       }
-      return { newId };
+      redirect('/dashboard');
     });
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
@@ -131,21 +127,22 @@ export async function createOrder(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateOrder(data: FormData) {
+export async function updateOrder(prevState: any, formData: FormData) {
   try {
-    const order = updateSchema.parse({
-      id: data.get('id'),
-      name: data.get('name'),
-      createdById: data.get('createdBy'),
-      customerId: data.get('customer'),
-      totalCents: data.get('total'),
-      status: data.get('status'),
-    });
+    const data = {
+      id: formData.get('id'),
+      name: formData.get('name'),
+      createdBy: formData.get('createdBy'),
+      customer: formData.get('customer'),
+      totalCents: Number(formData.get('totalCents')),
+      status: JSON.parse(formData.get('status')),
+    };
+    const order = updateSchema.parse(data);
     const updatedOrder: typeof orders.$inferInsert = {
       id: order.id,
       name: order.name,
-      createdById: order.createdById,
-      customerId: order.customerId,
+      createdById: order.createdBy,
+      customerId: order.customer,
       status: order.status,
       totalCents: order.totalCents,
     };
@@ -178,13 +175,13 @@ export async function updateOrder(data: FormData) {
   }
 }
 
-export async function modifyOrderItems(
-  orderId: string,
-  data: orderItemChanges
-) {
+export async function modifyOrderItems(data: FormData) {
   try {
-    const addOrUpdate = orderItemsSchema.parse(data.addOrUpdate);
-    const remove = orderItemsSchema.parse(data.remove);
+    // transform formdata to zod schema
+    const removals = JSON.parse(data.get('remove'));
+    const changes = JSON.parse(data.get('changes'));
+    const addOrUpdate = orderItemsSchema.parse(changes);
+    const remove = orderItemsSchema.parse(removals);
     return await db.transaction(async (tx) => {
       // insert/update each new item
       if (addOrUpdate.length) {
