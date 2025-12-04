@@ -13,7 +13,7 @@ export default function Nav() {
           <Link href='/dashboard'>Dashboard</Link>
         </Button>
         <Button color='primary'>
-          <Link href='/orders'>Orders</Link>
+          <Link href='/dashboard/orders'>Orders</Link>
         </Button>
         <Button color='warning' onPress={signout}>
           Sign Out
