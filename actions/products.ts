@@ -14,7 +14,7 @@ export interface productData {
   reserved: number;
 }
 
-export type transactionType = 'received' | 'ordered' | 'returned' | 'sale';
+export type transactionType = 'received' | 'ordered' | 'return' | 'sale';
 export interface inventoryTransaction {
   productId: string;
   transaction: transactionType;
@@ -41,10 +41,10 @@ const updateSchema = productSchema.extend({
 });
 
 const inventorySchema = z.object({
-  id: z.string().uuid(),
-  referenceId: z.string(),
+  productId: z.string().uuid(),
+  referenceId: z.string().uuid(),
   quantity: z.number(),
-  transaction: z.enum(['received', 'ordered', 'returned', 'sale']),
+  transaction: z.enum(['received', 'ordered', 'return', 'sale']),
 });
 
 export async function createProduct(prevState: any, formData: FormData) {
@@ -104,16 +104,11 @@ export async function updateProduct(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateInventory(data: FormData) {
+export async function updateInventory(data: inventoryTransaction) {
   try {
+    const validData: typeof inventoryTransactions.$inferInsert =
+      inventorySchema.parse(data);
     return await db.transaction(async (tx) => {
-      const validData = inventorySchema.parse({
-        id: data.get('productId'),
-        transaction: data.get('transaction'),
-        quantity: data.get('quantity'),
-        referenceId: data.get('referenceId'),
-      });
-
       const [newId] = await tx
         .insert(inventoryTransactions)
         .values(validData)
@@ -122,7 +117,7 @@ export async function updateInventory(data: FormData) {
 
       if (
         validData.transaction === 'received' ||
-        validData.transaction === 'returned'
+        validData.transaction === 'return'
       ) {
         await tx
           .update(products)
