@@ -1,10 +1,11 @@
 'use server';
 import { db } from '@/db/db';
 import { eq, asc, and } from 'drizzle-orm';
-import { purchaseOrders, purchaseOrderItems } from '@/db/schema';
+import { purchaseOrders, purchaseOrderItems, products } from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export interface purchaseOrderData {
   orderDate: string;
@@ -37,16 +38,19 @@ const itemsSchema = z.array(purchaseOrderItemSchema);
 const purchaseOrderSchema = z.object({
   orderDate: z.string(),
   status: z.enum(['received', 'shipped', 'pending']),
-  items: itemsSchema,
 });
 
 const updateSchema = purchaseOrderSchema.extend({
   id: z.string().uuid(),
 });
 
-export async function createPurchaseOrder(data: FormData) {
+export async function createPurchaseOrder(prevState: any, data: FormData) {
   try {
-    const purchaseOrder = purchaseOrderSchema.parse(data);
+    const inputs = {
+      orderDate: data.get('orderDate'),
+      status: data.get('status'),
+    };
+    const purchaseOrder = purchaseOrderSchema.parse(inputs);
     return await db.transaction(async (tx) => {
       const newPurchaseOrder: typeof purchaseOrders.$inferInsert = {
         orderDate: purchaseOrder.orderDate,
@@ -58,20 +62,44 @@ export async function createPurchaseOrder(data: FormData) {
         .values(newPurchaseOrder)
         .onConflictDoNothing()
         .returning({ id: purchaseOrders.id });
-
-      const itemsWithId = purchaseOrder.items.map((item) => ({
-        purchaseOrderId: newId.id,
-        productId: item.productId,
-        quantity: item.quantity || 0,
-        priceCents: item.priceCents || 0,
-        expirationDate: item.expirationDate,
-      }));
+      const items = {
+        productId: data.getAll('product'),
+        quantity: data.getAll('quantity'),
+        cost: data.getAll('cost'),
+        expirationDate: data.getAll('expirationDate'),
+      };
+      const itemsWithId = [];
+      for (let i = 0; i < items.productId.length; i++) {
+        const [id] = await tx
+          .select({ id: products.id })
+          .from(products)
+          .where(eq(products.name, items.productId[i]));
+        itemsWithId.push({
+          purchaseOrderId: newId.id,
+          productId: id.id,
+          quantity: items.quantity[i],
+          costCents: Number(items.cost[i]) * 100,
+          expirationDate: items.expirationDate,
+        });
+      }
+      const verifiedItems = itemsSchema.parse(itemsWithId);
 
       await tx
         .insert(purchaseOrderItems)
-        .values(itemsWithId)
+        .values(verifiedItems)
         .onConflictDoNothing();
-      return { newId };
+      if (purchaseOrder.status === 'received') {
+        for (const item of verifiedItems) {
+          const change = {
+            productId: item.productId,
+            transaction: 'received',
+            quantity: item.quantity!,
+            referenceId: item.purchaseOrderId,
+          };
+          await updateInventory(change);
+        }
+      }
+      redirect('/dashboard');
     });
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
@@ -80,9 +108,14 @@ export async function createPurchaseOrder(data: FormData) {
   }
 }
 
-export async function updatePurchaseOrder(data: FormData) {
+export async function updatePurchaseOrder(prevState: any, data: FormData) {
   try {
-    const update = updateSchema.parse(data);
+    const inputs = {
+      id: data.get('id'),
+      orderDate: data.get('orderDate'),
+      status: data.get('status'),
+    };
+    const update = updateSchema.parse(inputs);
     // make inventory transactions and update product inventory for each item
     await db.transaction(async (tx) => {
       tx.update(purchaseOrders)
