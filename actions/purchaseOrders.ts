@@ -1,11 +1,15 @@
 'use server';
 import { db } from '@/db/db';
-import { eq, asc, and } from 'drizzle-orm';
-import { purchaseOrders, purchaseOrderItems, products } from '@/db/schema';
+import { eq, asc, and, sql } from 'drizzle-orm';
+import {
+  purchaseOrders,
+  purchaseOrderItems,
+  products,
+  inventoryTransactions,
+} from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 export interface purchaseOrderData {
   orderDate: string;
@@ -28,8 +32,8 @@ export type purchaseOrderItemChanges = {
 const purchaseOrderItemSchema = z.object({
   purchaseOrderId: z.string().uuid(),
   productId: z.string().uuid(),
-  quantity: z.number(),
-  priceCents: z.number(),
+  quantity: z.coerce.number(),
+  priceCents: z.coerce.number(),
   expirationDate: z.string(),
 });
 
@@ -51,7 +55,7 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
       status: data.get('status'),
     };
     const purchaseOrder = purchaseOrderSchema.parse(inputs);
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const newPurchaseOrder: typeof purchaseOrders.$inferInsert = {
         orderDate: purchaseOrder.orderDate,
         status: purchaseOrder.status,
@@ -65,7 +69,7 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
       const items = {
         productId: data.getAll('product'),
         quantity: data.getAll('quantity'),
-        cost: data.getAll('cost'),
+        price: data.getAll('price'),
         expirationDate: data.getAll('expirationDate'),
       };
       const itemsWithId = [];
@@ -77,9 +81,9 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
         itemsWithId.push({
           purchaseOrderId: newId.id,
           productId: id.id,
-          quantity: items.quantity[i],
-          costCents: Number(items.cost[i]) * 100,
-          expirationDate: items.expirationDate,
+          quantity: Number(items.quantity[i]),
+          priceCents: Number(items.price[i]) * 100,
+          expirationDate: items.expirationDate[i],
         });
       }
       const verifiedItems = itemsSchema.parse(itemsWithId);
@@ -88,6 +92,7 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
         .insert(purchaseOrderItems)
         .values(verifiedItems)
         .onConflictDoNothing();
+
       if (purchaseOrder.status === 'received') {
         for (const item of verifiedItems) {
           const change = {
@@ -96,10 +101,16 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
             quantity: item.quantity!,
             referenceId: item.purchaseOrderId,
           };
-          await updateInventory(change);
+          await tx
+            .insert(inventoryTransactions)
+            .values(change)
+            .onConflictDoNothing();
+          await tx
+            .update(products)
+            .set({ quantity: sql`${products.quantity} + ${change.quantity}` })
+            .where(eq(products.id, `${change.productId}`));
         }
       }
-      redirect('/dashboard');
     });
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
