@@ -1,7 +1,14 @@
 'use server';
 import { db } from '@/db/db';
-import { eq, asc, and } from 'drizzle-orm';
-import { orders, orderItems, products, customers, users } from '@/db/schema';
+import { eq, asc, and, sql } from 'drizzle-orm';
+import {
+  orders,
+  orderItems,
+  products,
+  customers,
+  users,
+  inventoryTransactions,
+} from '@/db/schema';
 import { updateInventory } from './products';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
@@ -59,7 +66,7 @@ export async function createOrder(prevState: any, formData: FormData) {
     };
     const order = orderSchema.parse(data);
 
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const [user] = await tx
         .select({ userId: users.id })
         .from(users)
@@ -111,14 +118,29 @@ export async function createOrder(prevState: any, formData: FormData) {
         for (const item of verifiedItems) {
           const change = {
             productId: item.productId,
-            transaction: 'ordered',
+            transaction: newOrder.status ? 'sale' : 'ordered',
             quantity: item.quantity!,
             referenceId: item.orderId,
           };
-          await updateInventory(change);
+          await tx
+            .insert(inventoryTransactions)
+            .values(change)
+            .onConflictDoNothing();
+          if (newOrder.status) {
+            await tx
+              .update(products)
+              .set({
+                quantity: sql`${products.quantity} - ${change.quantity}`,
+              })
+              .where(eq(products.id, `${change.productId}`));
+          } else {
+            await tx
+              .update(products)
+              .set({ reserved: sql`${products.reserved} + ${change.quantity}` })
+              .where(eq(products.id, `${change.productId}`));
+          }
         }
       }
-      redirect('/dashboard');
     });
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
@@ -164,7 +186,7 @@ export async function updateOrder(prevState: any, formData: FormData) {
             quantity: item.quantity!,
             referenceId: updatedOrder.id,
           } as const;
-          await updateInventory(deliveredItem);
+          // await updateInventory(deliveredItem);
         }
       }
     });
