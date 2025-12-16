@@ -9,10 +9,8 @@ import {
   users,
   inventoryTransactions,
 } from '@/db/schema';
-import { updateInventory } from './products';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 export interface orderData {
   name: string;
@@ -161,7 +159,6 @@ export async function updateOrder(prevState: any, formData: FormData) {
     };
     const order = updateSchema.parse(data);
     const updatedOrder: typeof orders.$inferInsert = {
-      id: order.id,
       name: order.name,
       createdById: order.createdBy,
       customerId: order.customer,
@@ -172,21 +169,31 @@ export async function updateOrder(prevState: any, formData: FormData) {
       await tx
         .update(orders)
         .set(updatedOrder)
-        .where(eq(orders.id, `${updatedOrder.id}`))
+        .where(eq(orders.id, `${order.id}`))
         .returning({ id: orders.id });
       if (updatedOrder.status) {
         const items = await tx
           .select()
           .from(orderItems)
-          .where(eq(orderItems.orderId, `${updatedOrder.id}`));
+          .where(eq(orderItems.orderId, `${order.id}`));
+        await tx
+          .update(inventoryTransactions)
+          .set({ transaction: 'sale' })
+          .where(eq(inventoryTransactions.referenceId, order.id));
         for (const item of items) {
           const deliveredItem = {
             productId: item.productId,
             transaction: 'sale',
             quantity: item.quantity!,
             referenceId: updatedOrder.id,
-          } as const;
-          // await updateInventory(deliveredItem);
+          };
+          await tx
+            .update(products)
+            .set({
+              quantity: sql`${products.quantity} - ${deliveredItem.quantity}`,
+              reserved: sql`${products.reserved} - ${deliveredItem.quantity}`,
+            })
+            .where(eq(products.id, `${deliveredItem.productId}`));
         }
       }
     });
@@ -202,6 +209,7 @@ export async function modifyOrderItems(data: FormData) {
     // transform formdata to zod schema
     const removals = JSON.parse(data.get('remove'));
     const changes = JSON.parse(data.get('changes'));
+    const id = data.get('id');
     const addOrUpdate = orderItemsSchema.parse(changes);
     const remove = orderItemsSchema.parse(removals);
     return await db.transaction(async (tx) => {
@@ -224,7 +232,7 @@ export async function modifyOrderItems(data: FormData) {
             .delete(orderItems)
             .where(
               and(
-                eq(orderItems.orderId, `${orderId}`),
+                eq(orderItems.orderId, `${id}`),
                 eq(orderItems.productId, `${remove[i].productId}`)
               )
             );
@@ -255,6 +263,7 @@ export const getOrdersForDashboard = unstable_cache(
     const data = await db.query.orders.findMany({
       orderBy: [asc(orders.createdAt)],
       limit: 25,
+      columns: { lastUpdated: false, createdAt: false, createdById: false },
     });
     return data ?? [];
   },
@@ -282,7 +291,17 @@ export async function getOneOrder(orderId: string) {
 
 export async function getAllOrders() {
   try {
-    return await db.select().from(orders);
+    return await db
+      .select({
+        Name: orders.name,
+        Updated: orders.lastUpdated,
+        Customer: customers.name,
+        Delivered: orders.status,
+        Total: orders.totalCents,
+        id: orders.id,
+      })
+      .from(orders)
+      .innerJoin(customers, eq(orders.customerId, customers.id));
   } catch (err) {
     console.error(`Order data fetch error ${err}`);
     throw err;
