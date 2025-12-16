@@ -1,7 +1,7 @@
 'use server';
 import { db } from '@/db/db';
 import { eq, asc, sql } from 'drizzle-orm';
-import { products, inventoryTransactions } from '@/db/schema';
+import { products, inventoryTransactions, manufacturers } from '@/db/schema';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
 
@@ -26,8 +26,8 @@ const productSchema = z.object({
   name: z.string().trim(),
   commonName: z.string().optional().or(z.literal('')),
   manufacturedBy: z.string().trim(),
-  quantity: z.number(),
-  reserved: z.number(),
+  quantity: z.coerce.number().default(0),
+  reserved: z.coerce.number().default(0),
   imageLink: z
     .string()
     .url('Must be valid URL')
@@ -54,16 +54,19 @@ export async function createProduct(prevState: any, formData: FormData) {
       commonName: formData.get('commonName'),
       manufacturedBy: formData.get('manufacturedBy'),
       imageLink: formData.get('imageLink'),
-      quantity: formData.get('quantity'),
-      reserved: formData.get('reserved'),
+      quantity: Number(formData.get('quantity')),
+      reserved: Number(formData.get('reserved')),
     });
-
-    return await db
+    const [manufacturer] = await db
+      .select({ id: manufacturers.id })
+      .from(manufacturers)
+      .where(eq(manufacturers.name, `${data.manufacturedBy}`));
+    await db
       .insert(products)
       .values({
         name: data.name,
         commonName: data.commonName,
-        manufacturedBy: data.manufacturedBy,
+        manufacturedBy: manufacturer.id,
         imageLink: data.imageLink,
         quantity: data.quantity,
         reserved: data.reserved,
@@ -71,7 +74,7 @@ export async function createProduct(prevState: any, formData: FormData) {
       .onConflictDoNothing()
       .returning({ newId: products.id });
   } catch (err) {
-    if (err instanceof z.ZodError) console.error(`${err.issues}`);
+    if (err instanceof z.ZodError) throw console.error(`${err.issues}`);
     console.error(`Insertion error: ${err}`);
     throw err;
   }
@@ -85,63 +88,27 @@ export async function updateProduct(prevState: any, formData: FormData) {
       commonName: formData.get('commonName'),
       manufacturedBy: formData.get('manufacturedBy'),
       imageLink: formData.get('imageLink'),
-      quantity: formData.get('quantity'),
-      reserved: formData.get('reserved'),
+      quantity: Number(formData.get('quantity')),
+      reserved: Number(formData.get('reserved')),
     });
+    const [manufacturer] = await db
+      .select({ id: manufacturers.id })
+      .from(manufacturers)
+      .where(eq(manufacturers.name, `${data.manufacturedBy}`));
     await db
       .update(products)
       .set({
         name: data.name,
         commonName: data.commonName,
-        manufacturedBy: data.manufacturedBy,
+        manufacturedBy: manufacturer.id,
         imageLink: data.imageLink,
+        quantity: data.quantity,
+        reserved: data.reserved,
       })
       .where(eq(products.id, `${data.id}`));
   } catch (err) {
-    if (err instanceof z.ZodError) console.error(`${err.issues}`);
+    if (err instanceof z.ZodError) throw console.error(`${err.issues}`);
     console.error(`Update Error ${err}`);
-    throw err;
-  }
-}
-
-export async function updateInventory(data: inventoryTransaction) {
-  try {
-    const validData: typeof inventoryTransactions.$inferInsert =
-      inventorySchema.parse(data);
-    return await db.transaction(async (tx) => {
-      const [newId] = await tx
-        .insert(inventoryTransactions)
-        .values(validData)
-        .onConflictDoNothing()
-        .returning({ id: inventoryTransactions.id });
-
-      if (
-        validData.transaction === 'received' ||
-        validData.transaction === 'return'
-      ) {
-        await tx
-          .update(products)
-          .set({ quantity: sql`${products.quantity} + ${validData.quantity}` })
-          .where(eq(products.id, `${validData.id}`));
-      } else if (validData.transaction === 'ordered') {
-        await tx
-          .update(products)
-          .set({ reserved: sql`${products.reserved} + ${validData.quantity}` })
-          .where(eq(products.id, `${validData.id}`));
-      } else {
-        await tx
-          .update(products)
-          .set({
-            quantity: sql`${products.quantity} - ${validData.quantity}`,
-            reserved: sql`${products.reserved} - ${validData.quantity}`,
-          })
-          .where(eq(products.id, `${validData.id}`));
-      }
-      return newId;
-    });
-  } catch (err) {
-    if (err instanceof z.ZodError) console.error(`${err.issues}`);
-    console.error(`Inventory update error ${err}`);
     throw err;
   }
 }
