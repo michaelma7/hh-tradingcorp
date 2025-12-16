@@ -10,6 +10,7 @@ const links = [
   { route: '/dashboard/products', name: 'Products' },
   { route: '/dashboard/manufacturers', name: 'Manufacturers' },
   { route: '/dashboard/customers', name: 'Customers' },
+  { route: '/dashboard/purchaseOrders', name: 'Purchase Orders' },
 ];
 
 const isActive = (path: string, route: string) => {
