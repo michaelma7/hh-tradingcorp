@@ -104,7 +104,13 @@ export async function getOneManufacturer(manufacturerId: string) {
 
 export async function getAllManufacturers() {
   try {
-    return await db.select().from(manufacturers);
+    return await db
+      .select({
+        Name: manufacturers.name,
+        Contact: manufacturers.contact,
+        id: manufacturers.id,
+      })
+      .from(manufacturers);
   } catch (err) {
     console.error(`Product data fetch error ${err}`);
     throw err;

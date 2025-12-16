@@ -7,7 +7,6 @@ import {
   products,
   inventoryTransactions,
 } from '@/db/schema';
-import { updateInventory } from './products';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
 
@@ -127,7 +126,6 @@ export async function updatePurchaseOrder(prevState: any, data: FormData) {
       status: data.get('status'),
     };
     const update = updateSchema.parse(inputs);
-    // make inventory transactions and update product inventory for each item
     await db.transaction(async (tx) => {
       tx.update(purchaseOrders)
         .set({
@@ -146,8 +144,13 @@ export async function updatePurchaseOrder(prevState: any, data: FormData) {
             transaction: 'received',
             quantity: item.quantity!,
             referenceId: update.id,
-          } as const;
-          await updateInventory(receivedItem);
+          };
+          await tx
+            .update(products)
+            .set({
+              quantity: sql`${products.quantity} + ${receivedItem.quantity}`,
+            })
+            .where(eq(products.id, `${receivedItem.productId}`));
         }
       }
     });
@@ -158,13 +161,13 @@ export async function updatePurchaseOrder(prevState: any, data: FormData) {
   }
 }
 
-export async function modifyPurchaseOrderItems(
-  purchaseOrderId: string,
-  data: purchaseOrderItemChanges
-) {
+export async function modifyPurchaseOrderItems(data: FormData) {
   try {
-    const addOrUpdate = itemsSchema.parse(data.addOrUpdate);
-    const remove = itemsSchema.parse(data.remove);
+    const changes = JSON.parse(data.get('changes'));
+    const removals = JSON.parse(data.get('remove'));
+    const id = data.get('id');
+    const addOrUpdate = itemsSchema.parse(changes);
+    const remove = itemsSchema.parse(removals);
     await db.transaction(async (tx) => {
       // insert/update each new item
       if (addOrUpdate.length) {
@@ -185,7 +188,7 @@ export async function modifyPurchaseOrderItems(
             .delete(purchaseOrderItems)
             .where(
               and(
-                eq(purchaseOrderItems.purchaseOrderId, `${purchaseOrderId}`),
+                eq(purchaseOrderItems.purchaseOrderId, `${id}`),
                 eq(purchaseOrderItems.productId, `${remove[i].productId}`)
               )
             );
@@ -257,7 +260,13 @@ export async function getOnePurchaseOrder(purchaseOrderId: string) {
 
 export async function getAllPurchaseOrders() {
   try {
-    return await db.select().from(purchaseOrders);
+    return await db
+      .select({
+        OrderDate: purchaseOrders.orderDate,
+        Status: purchaseOrders.status,
+        id: purchaseOrders.id,
+      })
+      .from(purchaseOrders);
   } catch (err) {
     console.error(`Product data fetch error ${err}`);
     throw err;
