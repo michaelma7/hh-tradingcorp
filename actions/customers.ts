@@ -4,6 +4,7 @@ import { eq, asc } from 'drizzle-orm';
 import { customers } from '@/db/schema';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export interface customersData {
   name: string;
@@ -36,7 +37,7 @@ export async function createCustomer(prevState: any, data: FormData) {
   } catch (err) {
     console.error(`Insertion error: ${err}`);
   }
-  return;
+  redirect('/dashboard');
 }
 
 export async function updateCustomer(prevState: any, data: FormData) {

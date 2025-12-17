@@ -12,7 +12,6 @@ export const getCurrentUser = cache(async () => {
 
     const user = await getUserFromToken();
     if (!user) redirect('/signin');
-
     return user;
   } catch (err) {
     console.error('Cannot find cookie', err);

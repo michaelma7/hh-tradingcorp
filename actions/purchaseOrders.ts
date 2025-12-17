@@ -9,6 +9,7 @@ import {
 } from '@/db/schema';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export interface purchaseOrderData {
   orderDate: string;
@@ -116,6 +117,7 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
     console.error(`Insertion error: ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export async function updatePurchaseOrder(prevState: any, data: FormData) {

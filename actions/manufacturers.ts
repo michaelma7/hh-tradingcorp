@@ -4,6 +4,7 @@ import { eq, asc } from 'drizzle-orm';
 import { manufacturers } from '@/db/schema';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export interface manufacturerData {
   name: string;
@@ -25,9 +26,9 @@ export async function createManfacturer(prevState: any, data: FormData) {
       name: data.get('name'),
       contact: data.get('contact'),
     });
-    if (newManu.name === null || typeof newManu.name !== 'string') {
+    if (newManu.name === null) {
       console.error('Data type not supported');
-      throw Error;
+      throw new Error();
     }
     await db
       .insert(manufacturers)
@@ -35,13 +36,13 @@ export async function createManfacturer(prevState: any, data: FormData) {
         name: newManu.name,
         contact: newManu.contact,
       })
-      .onConflictDoNothing()
-      .returning({ newId: manufacturers.id });
+      .onConflictDoNothing();
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Insertion error: ${err}`);
     throw err;
   }
+  redirect('/dashbaord');
 }
 
 export async function updateManfacturer(prevState: any, data: FormData) {

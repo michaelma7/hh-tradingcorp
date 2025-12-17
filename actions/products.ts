@@ -4,6 +4,7 @@ import { eq, asc, sql } from 'drizzle-orm';
 import { products, inventoryTransactions, manufacturers } from '@/db/schema';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export interface productData {
   name: string;
@@ -78,6 +79,7 @@ export async function createProduct(prevState: any, formData: FormData) {
     console.error(`Insertion error: ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export async function updateProduct(prevState: any, formData: FormData) {

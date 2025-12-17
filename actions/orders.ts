@@ -11,6 +11,7 @@ import {
 } from '@/db/schema';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export interface orderData {
   name: string;
@@ -145,6 +146,7 @@ export async function createOrder(prevState: any, formData: FormData) {
     console.error(`Order insertion error: ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export async function updateOrder(prevState: any, formData: FormData) {
