@@ -57,6 +57,7 @@ export async function updateCustomer(prevState: any, data: FormData) {
   } catch (err) {
     console.error(`Update Error ${err}`);
   }
+  redirect('/dashboard');
 }
 
 export async function deleteCustomer(customerId: number) {
@@ -65,6 +66,7 @@ export async function deleteCustomer(customerId: number) {
   } catch (err) {
     console.error(`Delete Error ${err}`);
   }
+  redirect('/dashboard');
 }
 
 export const getCustomersForDashboard = unstable_cache(

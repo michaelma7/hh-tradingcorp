@@ -10,6 +10,7 @@ import {
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { inventoryTransaction } from './products';
 
 export interface purchaseOrderData {
   orderDate: string;
@@ -95,7 +96,7 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
 
       if (purchaseOrder.status === 'received') {
         for (const item of verifiedItems) {
-          const change = {
+          const change: inventoryTransaction = {
             productId: item.productId,
             transaction: 'received',
             quantity: item.quantity!,
@@ -141,7 +142,7 @@ export async function updatePurchaseOrder(prevState: any, data: FormData) {
           .from(purchaseOrderItems)
           .where(eq(purchaseOrderItems.purchaseOrderId, `${update.id}`));
         for (const item of items) {
-          const receivedItem = {
+          const receivedItem: inventoryTransaction = {
             productId: item.productId,
             transaction: 'received',
             quantity: item.quantity!,
@@ -161,6 +162,7 @@ export async function updatePurchaseOrder(prevState: any, data: FormData) {
     console.error(`Update Error ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export async function modifyPurchaseOrderItems(data: FormData) {
@@ -218,6 +220,7 @@ export async function deletePurchaseOrder(purchaseOrderId: string) {
     console.error(`PuchaseOrder delete Error ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export const getPurchaseOrdersForDashboard = unstable_cache(

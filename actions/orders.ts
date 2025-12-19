@@ -12,6 +12,7 @@ import {
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { inventoryTransaction } from './products';
 
 export interface orderData {
   name: string;
@@ -115,7 +116,7 @@ export async function createOrder(prevState: any, formData: FormData) {
 
         await tx.insert(orderItems).values(verifiedItems).onConflictDoNothing();
         for (const item of verifiedItems) {
-          const change = {
+          const change: inventoryTransaction = {
             productId: item.productId,
             transaction: newOrder.status ? 'sale' : 'ordered',
             quantity: item.quantity!,
@@ -183,11 +184,11 @@ export async function updateOrder(prevState: any, formData: FormData) {
           .set({ transaction: 'sale' })
           .where(eq(inventoryTransactions.referenceId, order.id));
         for (const item of items) {
-          const deliveredItem = {
+          const deliveredItem: inventoryTransaction = {
             productId: item.productId,
             transaction: 'sale',
             quantity: item.quantity!,
-            referenceId: updatedOrder.id,
+            referenceId: updatedOrder.id!,
           };
           await tx
             .update(products)
@@ -204,6 +205,7 @@ export async function updateOrder(prevState: any, formData: FormData) {
     console.error(`Order update Error ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export async function modifyOrderItems(data: FormData) {
@@ -258,6 +260,7 @@ export async function deleteOrder(orderId: string) {
     console.error(`Order delete Error ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export const getOrdersForDashboard = unstable_cache(

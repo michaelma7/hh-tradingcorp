@@ -113,6 +113,7 @@ export async function updateProduct(prevState: any, formData: FormData) {
     console.error(`Update Error ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export async function deleteProduct(productId: string) {
@@ -122,6 +123,7 @@ export async function deleteProduct(productId: string) {
     console.error(`Delete Error ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export const getProductsForDashboard = unstable_cache(

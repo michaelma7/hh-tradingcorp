@@ -64,6 +64,7 @@ export async function updateManfacturer(prevState: any, data: FormData) {
     console.error(`Update Error ${err}`);
     throw err;
   }
+  redirect('/dashboard');
 }
 
 export async function deleteManfacturer(manufacturerId: number) {
@@ -74,6 +75,7 @@ export async function deleteManfacturer(manufacturerId: number) {
   } catch (err) {
     console.error(`Delete Error ${err}`);
   }
+  redirect('/dashboard');
 }
 
 export const getManfacturersForDashboard = unstable_cache(
