@@ -19,10 +19,10 @@ import Link from 'next/link';
 export default function DashboardTabs({ data }) {
   const orderRows = data.orders.map((order) => {
     return (
-      <TableRow key={order.id}>
+      <TableRow key={order.id} className='bg-white'>
         <TableCell>{order.name}</TableCell>
         <TableCell>{order.customerId}</TableCell>
-        <TableCell>{order.totalCents}</TableCell>
+        <TableCell>${order.totalCents / 100}</TableCell>
         <TableCell>{order.status}</TableCell>
       </TableRow>
     );
@@ -30,7 +30,7 @@ export default function DashboardTabs({ data }) {
 
   const productRows = data.products.map((product) => {
     return (
-      <TableRow key={product.id}>
+      <TableRow key={product.id} className='bg-white'>
         <TableCell>{product.name}</TableCell>
         <TableCell>{product.quantity}</TableCell>
         <TableCell>{product.manufacturedBy}</TableCell>
@@ -41,7 +41,7 @@ export default function DashboardTabs({ data }) {
 
   const purchaseOrderRows = data.purchaseOrders.map((purchaseOrder) => {
     return (
-      <TableRow key={purchaseOrder.id}>
+      <TableRow key={purchaseOrder.id} className='bg-white'>
         <TableCell>{purchaseOrder.id}</TableCell>
         <TableCell>{purchaseOrder.orderDate}</TableCell>
         <TableCell>{purchaseOrder.status}</TableCell>
@@ -51,7 +51,7 @@ export default function DashboardTabs({ data }) {
 
   const customerRows = data.customers.map((customer) => {
     return (
-      <TableRow key={customer.id}>
+      <TableRow key={customer.id} className='bg-white'>
         <TableCell>{customer.name}</TableCell>
         <TableCell>{customer.location}</TableCell>
       </TableRow>
@@ -60,7 +60,7 @@ export default function DashboardTabs({ data }) {
 
   const manufacturerRows = data.manufacturers.map((manufacturer) => {
     return (
-      <TableRow key={manufacturer.id}>
+      <TableRow key={manufacturer.id} className='bg-white'>
         <TableCell>{manufacturer.name}</TableCell>
         <TableCell>{manufacturer.contact}</TableCell>
       </TableRow>
@@ -70,7 +70,7 @@ export default function DashboardTabs({ data }) {
     <Tabs aria-label='Options'>
       <Tab key='orders' title='Orders'>
         <div>
-          <NewOrderModal />
+          <NewOrderModal productData={data.productData} />
           <Button color='primary' size='md' radius='md'>
             <Link href='/dashboard/orders'>View All Orders</Link>
           </Button>

@@ -6,29 +6,42 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-} from '@heroui/modal';
-import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
-import { Checkbox } from '@heroui/react';
-import { NumberInput } from '@heroui/number-input';
+  Autocomplete,
+  AutocompleteItem,
+  Button,
+  Input,
+  Checkbox,
+  NumberInput,
+} from '@heroui/react';
 import { createOrder } from '@/actions/orders';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
 import Submit from './Submit';
 import { useProvider } from '@/app/CurrentUserProvider';
 
-export default function NewOrderModal() {
+export default function NewOrderModal({
+  productData,
+}: {
+  productData: { key: string; code: string; name: string }[];
+}) {
   const { currentUser } = useProvider();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [deliveryStatus, setDeliveryStatus] = useState(false);
   const [items, setItems] = useState([
-    { id: 1, product: '', quantity: 0, price: 0, subtotal: 0 },
+    { id: 1, barcode: '', product: '', quantity: 0, price: 0, subtotal: 0 },
   ]);
   const addItem = () => {
     const newId = items.length + 1;
     setItems([
       ...items,
-      { id: newId, product: '', quantity: 0, price: 0, subtotal: 0 },
+      {
+        id: newId,
+        barcode: '',
+        product: '',
+        quantity: 0,
+        price: 0,
+        subtotal: 0,
+      },
     ]);
   };
   const removeRow = (id: number) => {
@@ -51,9 +64,7 @@ export default function NewOrderModal() {
     formData.set('status', JSON.stringify(deliveryStatus));
     createOrder(prevState, formData);
   };
-
-  const [formState, submit] = useActionState(formSubmit, null);
-
+  const [formState, submit, pending] = useActionState(formSubmit, null);
   return (
     <div>
       <Button
@@ -120,11 +131,28 @@ export default function NewOrderModal() {
                       key={item.id}
                       className='grid grid-cols-12 gap-4 items-center'
                     >
+                      <Autocomplete
+                        className='max-w-xs bg-white'
+                        items={productData}
+                        label='Barcode'
+                        name='barcode'
+                        placeholder='Please scan item'
+                      >
+                        {(product) => (
+                          <AutocompleteItem
+                            className='bg-white'
+                            key={product.key}
+                          >
+                            {product.code}
+                          </AutocompleteItem>
+                        )}
+                      </Autocomplete>
                       <Input
                         isClearable
                         type='text'
                         label='Product'
                         name='productName'
+                        disabled
                         value={item.product}
                         onChange={(e) =>
                           updateItem(item.id, 'product', e.target.value)
@@ -185,7 +213,11 @@ export default function NewOrderModal() {
                       <span id='total'>${total.toFixed(2)}</span>
                     </div>
                   </div>
-                  <Submit label={'Submit'} onPress={onClose} />
+                  <Submit
+                    label={'Submit'}
+                    onPress={onClose}
+                    disabled={pending}
+                  />
                 </form>
               </ModalBody>
               <ModalFooter>

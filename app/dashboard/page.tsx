@@ -1,5 +1,8 @@
 import { getOrdersForDashboard } from '@/actions/orders';
-import { getProductsForDashboard } from '@/actions/products';
+import {
+  getProductsForDashboard,
+  getProductsforOrders,
+} from '@/actions/products';
 import { getPurchaseOrdersForDashboard } from '@/actions/purchaseOrders';
 import { getCustomersForDashboard } from '@/actions/customers';
 import { getManfacturersForDashboard } from '@/actions/manufacturers';
@@ -11,7 +14,7 @@ export default async function Dashboard() {
   const purchaseOrders = await getPurchaseOrdersForDashboard();
   const customers = await getCustomersForDashboard();
   const manufacturers = await getManfacturersForDashboard();
-
+  const productData = await getProductsforOrders();
   return (
     <div className='flex w-full flex-col'>
       <h2>Dashboard</h2>
@@ -22,6 +25,7 @@ export default async function Dashboard() {
           purchaseOrders: purchaseOrders,
           customers: customers,
           manufacturers: manufacturers,
+          productData: productData,
         }}
       />
     </div>

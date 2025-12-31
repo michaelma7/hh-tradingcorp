@@ -178,3 +178,17 @@ export async function getAllProducts() {
     throw err;
   }
 }
+
+export async function getProductsforOrders() {
+  try {
+    return await db
+      .select({
+        key: products.id,
+        code: products.id,
+        name: products.name,
+      })
+      .from(products);
+  } catch (err) {
+    throw err;
+  }
+}
