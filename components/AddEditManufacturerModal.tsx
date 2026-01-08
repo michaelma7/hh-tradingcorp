@@ -9,7 +9,11 @@ import {
   Input,
 } from '@heroui/react';
 import Submit from './Submit';
-import { createManfacturer, updateManfacturer } from '@/actions/manufacturers';
+import {
+  createManfacturer,
+  updateManfacturer,
+  manufacturerData,
+} from '@/actions/manufacturers';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
@@ -18,13 +22,13 @@ export default function AddEditManufacturerModal({
   data,
 }: {
   edit: boolean;
-  data?: any;
+  data?: manufacturerData;
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
   const formAction = (prevState: any, formData: FormData) => {
     if (edit) {
-      formData.append('id', data.id);
+      formData.append('id', data!.id);
       updateManfacturer(prevState, formData);
     } else createManfacturer(prevState, formData);
   };
@@ -32,15 +36,21 @@ export default function AddEditManufacturerModal({
   let manufacturerName = '';
   let contact = '';
   if (edit) {
-    manufacturerName = data.name;
-    contact = data.contact;
+    manufacturerName = data!.name;
+    contact = data!.contact;
   }
 
   return (
     <>
-      <Button color='primary' size='md' radius='md' onPress={onOpen}>
-        Create New Manufacturer <CirclePlus size={16} />
-      </Button>
+      {edit ? (
+        <Button color='primary' size='md' radius='md' onPress={onOpen}>
+          Edit <CirclePlus size={16} />
+        </Button>
+      ) : (
+        <Button color='primary' size='md' radius='md' onPress={onOpen}>
+          Create New Manufacturer <CirclePlus size={16} />
+        </Button>
+      )}
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (

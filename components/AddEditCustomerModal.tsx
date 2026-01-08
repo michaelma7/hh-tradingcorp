@@ -9,7 +9,11 @@ import {
   Input,
 } from '@heroui/react';
 import Submit from '@/components/Submit';
-import { createCustomer, updateCustomer } from '@/actions/customers';
+import {
+  createCustomer,
+  updateCustomer,
+  customersData,
+} from '@/actions/customers';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
@@ -18,13 +22,13 @@ export default function AddEditCustomerModal({
   data,
 }: {
   edit: boolean;
-  data?: any;
+  data?: customersData;
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
   const formAction = (prevState: any, formData: FormData) => {
     if (edit) {
-      formData.append('id', data.id);
+      formData.append('id', data!.id);
       updateCustomer(prevState, formData);
     } else createCustomer(prevState, formData);
   };
@@ -32,14 +36,21 @@ export default function AddEditCustomerModal({
   let customerName = '';
   let location = '';
   if (edit) {
-    customerName = data.name;
-    location = data.location;
+    customerName = data!.name;
+    location = data!.location;
   }
+
   return (
     <>
-      <Button color='primary' size='md' radius='md' onPress={onOpen}>
-        Create New Customer <CirclePlus size={16} />
-      </Button>
+      {edit ? (
+        <Button color='primary' size='md' radius='md' onPress={onOpen}>
+          Edit <CirclePlus size={16} />
+        </Button>
+      ) : (
+        <Button color='primary' size='md' radius='md' onPress={onOpen}>
+          Create New Customer <CirclePlus size={16} />
+        </Button>
+      )}
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (

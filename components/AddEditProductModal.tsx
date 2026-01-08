@@ -9,7 +9,7 @@ import {
   Input,
   NumberInput,
 } from '@heroui/react';
-import { createProduct, updateProduct } from '@/actions/products';
+import { createProduct, updateProduct, productData } from '@/actions/products';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
@@ -18,13 +18,13 @@ export default function AddEditProductModal({
   data,
 }: {
   edit: boolean;
-  data?: any;
+  data?: productData;
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
   const formAction = (prevState: any, formData: FormData) => {
     if (edit) {
-      formData.append('id', data.id);
+      formData.append('id', data!.id);
       updateProduct(prevState, formData);
     } else createProduct(prevState, formData);
   };
@@ -35,18 +35,24 @@ export default function AddEditProductModal({
   let imageLink = '';
   let quantity = 0;
   if (edit) {
-    productName = data.name;
-    commonName = data.commonName;
-    manufacturer = data.manufacturedBy;
-    imageLink = data.imageLink;
-    quantity = data.quantity;
+    productName = data!.name;
+    commonName = data!.commonName!;
+    manufacturer = data!.manufacturer;
+    imageLink = data!.imageLink!;
+    quantity = data!.quantity;
   }
 
   return (
     <>
-      <Button color='primary' size='md' radius='md' onPress={onOpen}>
-        Create New Product <CirclePlus size={16} />
-      </Button>
+      {edit ? (
+        <Button color='primary' size='md' radius='md' onPress={onOpen}>
+          Edit <CirclePlus size={16} />
+        </Button>
+      ) : (
+        <Button color='primary' size='md' radius='md' onPress={onOpen}>
+          Create New Product <CirclePlus size={16} />
+        </Button>
+      )}
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
