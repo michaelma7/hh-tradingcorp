@@ -4,20 +4,43 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
   Button,
   Input,
   NumberInput,
 } from '@heroui/react';
-import { createProduct } from '@/actions/products';
+import { createProduct, updateProduct } from '@/actions/products';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
-export default function NewOrderModal() {
+export default function AddEditProductModal({
+  edit,
+  data,
+}: {
+  edit: boolean;
+  data?: any;
+}) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit, pending] = useActionState(createProduct, initState);
+  const formAction = (prevState: any, formData: FormData) => {
+    if (edit) {
+      formData.append('id', data.id);
+      updateProduct(prevState, formData);
+    } else createProduct(prevState, formData);
+  };
+  const [formState, submit, pending] = useActionState(formAction, initState);
+  let productName = '';
+  let commonName = '';
+  let manufacturer = '';
+  let imageLink = '';
+  let quantity = 0;
+  if (edit) {
+    productName = data.name;
+    commonName = data.commonName;
+    manufacturer = data.manufacturedBy;
+    imageLink = data.imageLink;
+    quantity = data.quantity;
+  }
 
   return (
     <>
@@ -36,6 +59,7 @@ export default function NewOrderModal() {
                   <Input
                     isClearable
                     isRequired
+                    defaultValue={productName}
                     type='text'
                     name='name'
                     label='Product Name'
@@ -43,6 +67,7 @@ export default function NewOrderModal() {
                   />
                   <Input
                     isClearable
+                    defaultValue={commonName}
                     type='text'
                     name='commonName'
                     label='Common Name'
@@ -51,6 +76,7 @@ export default function NewOrderModal() {
                   <Input
                     isClearable
                     isRequired
+                    defaultValue={manufacturer}
                     type='text'
                     name='manufacturedBy'
                     label='Manufactured By'
@@ -58,12 +84,14 @@ export default function NewOrderModal() {
                   />
                   <Input
                     isClearable
+                    defaultValue={imageLink}
                     type='text'
                     name='imageLink'
                     label='Image Link'
                     className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
                   <NumberInput
+                    defaultValue={quantity}
                     type='number'
                     label='Quantity'
                     name='quantity'
@@ -71,17 +99,15 @@ export default function NewOrderModal() {
                     hideStepper
                     className='col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
-                  <Button color='primary' disabled={pending}>
+                  <Button type='submit' color='primary' disabled={pending}>
                     Submit
+                  </Button>
+                  <Button color='danger' variant='light' onPress={onClose}>
+                    Cancel
                   </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
               </ModalBody>
-              <ModalFooter>
-                <Button color='danger' variant='light' onPress={onClose}>
-                  Cancel
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>

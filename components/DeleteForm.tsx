@@ -10,7 +10,13 @@ import {
 } from '@heroui/react';
 import { Trash2 } from 'lucide-react';
 
-export default function DeleteForm({ id, action }: { id: string }) {
+export default function DeleteForm({
+  id,
+  action,
+}: {
+  id: string;
+  action: any;
+}) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const submit = () => {
     action(id);

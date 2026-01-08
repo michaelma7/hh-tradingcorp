@@ -4,40 +4,55 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
   Button,
   Input,
 } from '@heroui/react';
-import { createManfacturer } from '@/actions/manufacturers';
+import Submit from '@/components/Submit';
+import { createCustomer, updateCustomer } from '@/actions/customers';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
-export default function NewOrderModal() {
+export default function AddEditCustomerModal({
+  edit,
+  data,
+}: {
+  edit: boolean;
+  data?: any;
+}) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit, pending] = useActionState(
-    createManfacturer,
-    initState
-  );
-
+  const formAction = (prevState: any, formData: FormData) => {
+    if (edit) {
+      formData.append('id', data.id);
+      updateCustomer(prevState, formData);
+    } else createCustomer(prevState, formData);
+  };
+  const [formState, submit, pending] = useActionState(formAction, initState);
+  let customerName = '';
+  let location = '';
+  if (edit) {
+    customerName = data.name;
+    location = data.location;
+  }
   return (
     <>
       <Button color='primary' size='md' radius='md' onPress={onOpen}>
-        Create New Manufacturer <CirclePlus size={16} />
+        Create New Customer <CirclePlus size={16} />
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className='flex flex-col gap-1'>
-                New Manufacturer
+                New Customer
               </ModalHeader>
               <ModalBody>
                 <form action={submit}>
                   <Input
                     isClearable
                     isRequired
+                    defaultValue={customerName}
                     type='text'
                     name='name'
                     label='Customer Name'
@@ -45,22 +60,19 @@ export default function NewOrderModal() {
                   />
                   <Input
                     isClearable
+                    defaultValue={location}
                     type='text'
-                    name='contact'
-                    label='Contact'
+                    name='location'
+                    label='Location'
                     className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
-                  <Button color='primary' disabled={pending}>
-                    Submit
+                  <Submit label='Submit' disabled={pending} />
+                  <Button color='danger' variant='light' onPress={onClose}>
+                    Cancel
                   </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
               </ModalBody>
-              <ModalFooter>
-                <Button color='danger' variant='light' onPress={onClose}>
-                  Cancel
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>

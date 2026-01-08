@@ -4,59 +4,76 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
   Button,
   Input,
 } from '@heroui/react';
-import Submit from '@/components/Submit';
-import { createCustomer } from '@/actions/customers';
+import Submit from './Submit';
+import { createManfacturer, updateManfacturer } from '@/actions/manufacturers';
 import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
-export default function NewOrderModal() {
+export default function AddEditManufacturerModal({
+  edit,
+  data,
+}: {
+  edit: boolean;
+  data?: any;
+}) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const [formState, submit] = useActionState(createCustomer, initState);
+  const formAction = (prevState: any, formData: FormData) => {
+    if (edit) {
+      formData.append('id', data.id);
+      updateManfacturer(prevState, formData);
+    } else createManfacturer(prevState, formData);
+  };
+  const [formState, submit, pending] = useActionState(formAction, initState);
+  let manufacturerName = '';
+  let contact = '';
+  if (edit) {
+    manufacturerName = data.name;
+    contact = data.contact;
+  }
 
   return (
     <>
       <Button color='primary' size='md' radius='md' onPress={onOpen}>
-        Create New Customer <CirclePlus size={16} />
+        Create New Manufacturer <CirclePlus size={16} />
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className='flex flex-col gap-1'>
-                New Customer
+                New Manufacturer
               </ModalHeader>
               <ModalBody>
                 <form action={submit}>
                   <Input
                     isClearable
                     isRequired
+                    defaultValue={manufacturerName}
                     type='text'
                     name='name'
-                    label='Customer Name'
+                    label='Manufacturer Name'
                     className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
                   <Input
                     isClearable
+                    defaultValue={contact}
                     type='text'
-                    name='location'
-                    label='Location'
+                    name='contact'
+                    label='Contact'
                     className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
-                  <Submit label='Submit' />
+                  <Submit label={'Submit'} disabled={pending} />
+                  <Button color='danger' variant='light' onPress={onClose}>
+                    Cancel
+                  </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
               </ModalBody>
-              <ModalFooter>
-                <Button color='danger' variant='light' onPress={onClose}>
-                  Cancel
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>
