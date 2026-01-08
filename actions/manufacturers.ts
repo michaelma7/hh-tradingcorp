@@ -7,6 +7,7 @@ import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export interface manufacturerData {
+  id: string;
   name: string;
   contact: string;
 }

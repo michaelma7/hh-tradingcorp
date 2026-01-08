@@ -7,9 +7,10 @@ import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export interface productData {
+  id: string;
   name: string;
   commonName?: string;
-  manufacturedBy: string;
+  manufacturer: string;
   imageLink?: string;
   quantity: number;
   reserved: number;
@@ -146,12 +147,14 @@ export async function getOneProduct(productId: string) {
   try {
     return await db
       .select({
-        Name: products.name,
-        Quantity: products.quantity,
-        Reserved: products.reserved,
-        Current: products.current,
-        Manufacturer: products.manufacturedBy,
-        Image: products.imageLink,
+        id: products.id,
+        name: products.name,
+        commonName: products.commonName,
+        quantity: products.quantity,
+        reserved: products.reserved,
+        current: products.current,
+        manufacturer: products.manufacturedBy,
+        imageLink: products.imageLink,
       })
       .from(products)
       .where(eq(products.id, `${productId}`));

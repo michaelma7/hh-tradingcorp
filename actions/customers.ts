@@ -7,6 +7,7 @@ import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export interface customersData {
+  id: string;
   name: string;
   location: string;
 }
@@ -73,6 +74,7 @@ export const getCustomersForDashboard = unstable_cache(
   async () => {
     const data = await db.query.customers.findMany({
       orderBy: [asc(customers.createdAt)],
+      limit: 20,
     });
     return data ?? [];
   },
