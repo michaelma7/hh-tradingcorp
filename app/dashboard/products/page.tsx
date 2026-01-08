@@ -1,5 +1,5 @@
 import { getAllProducts } from '@/actions/products';
-import NewProductModal from '@/components/NewProductModal';
+import AddEditProductModal from '@/components/AddEditProductModal';
 import TableGenerator from '@/components/TableGenerator';
 
 export default async function Orders() {
@@ -7,7 +7,7 @@ export default async function Orders() {
 
   return (
     <div>
-      <NewProductModal />
+      <AddEditProductModal edit={false} />
       <TableGenerator
         data={products}
         className='bg-white'

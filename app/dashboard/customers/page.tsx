@@ -1,12 +1,12 @@
 import { getAllCustomers } from '@/actions/customers';
-import NewCustomerModal from '@/components/NewCustomerModal';
+import AddEditCustomerModal from '@/components/AddEditCustomerModal';
 import TableGenerator from '@/components/TableGenerator';
 
 export default async function Orders() {
   const customers = await getAllCustomers();
   return (
     <div>
-      <NewCustomerModal />
+      <AddEditCustomerModal edit={false} />
       <TableGenerator
         data={customers}
         className='bg-white'

@@ -1,5 +1,7 @@
-import { getOneCustomer } from '@/actions/customers';
+import { getOneCustomer, deleteCustomer } from '@/actions/customers';
 import { redirect } from 'next/navigation';
+import DeleteForm from '@/components/DeleteForm';
+import AddEditCustomerModal from '@/components/AddEditCustomerModal';
 
 export default async function CustomersPage({
   params,
@@ -9,12 +11,15 @@ export default async function CustomersPage({
   const { id } = await params;
   const [customer] = await getOneCustomer(id);
   if (!customer) redirect('/dashboard/customers');
-  // fail statement to redirect to main page
 
   return (
     <div>
       <h2>{customer.name}</h2>
       <h4>{customer.location}</h4>
+      <div>
+        <AddEditCustomerModal edit={true} data={customer} />
+        <DeleteForm id={id} action={deleteCustomer} />
+      </div>
     </div>
   );
 }

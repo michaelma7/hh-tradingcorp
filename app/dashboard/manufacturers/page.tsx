@@ -1,5 +1,5 @@
 import { getAllManufacturers } from '@/actions/manufacturers';
-import NewManufacturerModal from '@/components/NewManufacturerModal';
+import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
 import TableGenerator from '@/components/TableGenerator';
 
 export default async function Orders() {
@@ -7,7 +7,7 @@ export default async function Orders() {
 
   return (
     <div>
-      <NewManufacturerModal />
+      <AddEditManufacturerModal edit={false} />
       <TableGenerator
         data={manufacturers}
         className='bg-white'

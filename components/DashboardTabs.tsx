@@ -11,12 +11,12 @@ import {
 } from '@heroui/table';
 import NewOrderModal from '@/components/NewOrderModal';
 import NewPurchaseOrderModal from '@/components/NewPurchaseOrderModal';
-import NewProductModal from '@/components/NewProductModal';
-import NewCustomerModal from '@/components/NewCustomerModal';
-import NewManufacturerModal from '@/components/NewManufacturerModal';
+import AddEditProductModal from '@/components/AddEditProductModal';
+import AddEditCustomerModal from '@/components/AddEditCustomerModal';
+import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
 import Link from 'next/link';
 
-export default function DashboardTabs({ data }) {
+export default function DashboardTabs({ data }: { data: any }) {
   const orderRows = data.orders.map((order) => {
     return (
       <TableRow key={order.id} className='bg-white'>
@@ -104,7 +104,7 @@ export default function DashboardTabs({ data }) {
         </Table>
       </Tab>
       <Tab key='products' title='Products'>
-        <NewProductModal />
+        <AddEditProductModal edit={false} />
         <Button color='primary' size='md' radius='md'>
           <Link href='/dashboard/products'>View All Products</Link>
         </Button>
@@ -121,7 +121,7 @@ export default function DashboardTabs({ data }) {
         </Table>
       </Tab>
       <Tab key='customers' title='Customers'>
-        <NewCustomerModal />
+        <AddEditCustomerModal edit={false} />
         <Button color='primary' size='md' radius='md'>
           <Link href='/dashboard/customers'>View All Customers</Link>
         </Button>
@@ -136,7 +136,7 @@ export default function DashboardTabs({ data }) {
         </Table>
       </Tab>
       <Tab key='manufacturers' title='Manufacturers'>
-        <NewManufacturerModal />
+        <AddEditManufacturerModal edit={false} />
         <Button color='primary' size='md' radius='md'>
           <Link href='/dashboard/manufacturers'>View All Manufacturers</Link>
         </Button>

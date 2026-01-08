@@ -1,4 +1,6 @@
-import { getOneManufacturer } from '@/actions/manufacturers';
+import { getOneManufacturer, deleteManfacturer } from '@/actions/manufacturers';
+import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
+import DeleteForm from '@/components/DeleteForm';
 import { redirect } from 'next/navigation';
 
 export default async function ManufacturerPage({
@@ -11,7 +13,12 @@ export default async function ManufacturerPage({
   if (!manufacturer) redirect('/dashboard/manufacturers');
   return (
     <div>
-      <h2>{manufacturer.id}</h2>
+      <h2>{manufacturer.name}</h2>
+      <div>{manufacturer.contact}</div>
+      <div>
+        <AddEditManufacturerModal edit={true} data={manufacturer} />
+        <DeleteForm id={id} action={deleteManfacturer} />
+      </div>
     </div>
   );
 }
