@@ -9,8 +9,8 @@ import {
   TableRow,
   TableHeader,
 } from '@heroui/table';
-import NewOrderModal from '@/components/NewOrderModal';
-import NewPurchaseOrderModal from '@/components/NewPurchaseOrderModal';
+import AddEditOrderModal from '@/components/AddEditOrderModal';
+import AddEditPurchaseOrderModal from '@/components/AddEditPurchaseOrderModal';
 import AddEditProductModal from '@/components/AddEditProductModal';
 import AddEditCustomerModal from '@/components/AddEditCustomerModal';
 import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
@@ -70,7 +70,7 @@ export default function DashboardTabs({ data }: { data: any }) {
     <Tabs aria-label='Options'>
       <Tab key='orders' title='Orders'>
         <div>
-          <NewOrderModal productData={data.productData} />
+          <AddEditOrderModal productData={data.productData} edit={false} />
           <Button color='primary' size='md' radius='md'>
             <Link href='/dashboard/orders'>View All Orders</Link>
           </Button>
@@ -88,7 +88,7 @@ export default function DashboardTabs({ data }: { data: any }) {
         </div>
       </Tab>
       <Tab key='purchaseOrders' title='Purchase Orders'>
-        <NewPurchaseOrderModal />
+        <AddEditPurchaseOrderModal edit={false} />
         <Button color='primary' size='md' radius='md'>
           <Link href='/dashboard/purchaseOrders'>View All Purchase Orders</Link>
         </Button>
