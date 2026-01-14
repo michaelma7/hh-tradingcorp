@@ -1,5 +1,5 @@
 import { getAllPurchaseOrders } from '@/actions/purchaseOrders';
-import NewPurchaseOrderModal from '@/components/NewPurchaseOrderModal';
+import AddEditPurchaseOrderModal from '@/components/AddEditPurchaseOrderModal';
 import TableGenerator from '@/components/TableGenerator';
 
 export default async function PurchaseOrders() {
@@ -7,7 +7,7 @@ export default async function PurchaseOrders() {
 
   return (
     <div>
-      <NewPurchaseOrderModal />
+      <AddEditPurchaseOrderModal edit={false} />
       <TableGenerator
         data={purchaseOrders}
         className='bg-white'
