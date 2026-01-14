@@ -13,15 +13,16 @@ import { redirect } from 'next/navigation';
 import { inventoryTransaction } from './products';
 
 export interface purchaseOrderData {
+  id: string;
   orderDate: string;
   status: 'received' | 'shipped' | 'pending';
 }
 
 export type purchaseOrderItem = {
-  purchaseOrderId: string;
-  productId: string;
+  id?: string;
+  product: string;
   quantity: number;
-  priceCents: number;
+  price: number;
   expirationDate: string;
 };
 
@@ -254,7 +255,19 @@ export async function getOnePurchaseOrder(purchaseOrderId: string) {
     return await db.query.purchaseOrders.findFirst({
       where: (purchaseOrders, { eq }) => eq(purchaseOrders.id, purchaseOrderId),
       with: {
-        items: true,
+        items: {
+          columns: {
+            purchaseOrderId: false,
+            productId: false,
+          },
+          with: {
+            product: {
+              columns: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
   } catch (err) {
