@@ -23,6 +23,7 @@ import {
 } from '@/actions/purchaseOrders';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
+import { parseDate } from '@internationalized/date';
 
 export default function AddEditPurchaseOrderModal({
   edit,
@@ -108,7 +109,7 @@ export default function AddEditPurchaseOrderModal({
                     label='Order Date'
                     isRequired
                     name='orderDate'
-                    defaultValue={edit ? new Date(orderData!.orderDate) : null}
+                    defaultValue={edit ? parseDate(orderData!.orderDate) : null}
                   />
                   <RadioGroup
                     label='Delivery Status'
@@ -171,6 +172,11 @@ export default function AddEditPurchaseOrderModal({
                         label='Expiration Date'
                         name='expirationDate'
                         isRequired
+                        value={
+                          item.expirationDate
+                            ? parseDate(item.expirationDate)
+                            : null
+                        }
                         onChange={(value) =>
                           updateItem(
                             item.id!,
