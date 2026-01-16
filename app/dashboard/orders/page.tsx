@@ -1,5 +1,5 @@
 import { getAllOrders } from '@/actions/orders';
-import NewOrderModal from '@/components/NewOrderModal';
+import AddEditOrderModal from '@/components/AddEditOrderModal';
 import TableGenerator from '@/components/TableGenerator';
 import { getProductsforOrders } from '@/actions/products';
 
@@ -8,7 +8,7 @@ export default async function Orders() {
   const products = await getProductsforOrders();
   return (
     <div>
-      <NewOrderModal productData={products} />
+      <AddEditOrderModal productData={products} edit={false} />
       <TableGenerator
         data={orders}
         className='bg-white'
