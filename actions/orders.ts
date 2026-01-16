@@ -1,6 +1,6 @@
 'use server';
 import { db } from '@/db/db';
-import { eq, asc, and, sql } from 'drizzle-orm';
+import { eq, asc, and, sql, desc } from 'drizzle-orm';
 import {
   orders,
   orderItems,
@@ -15,6 +15,7 @@ import { redirect } from 'next/navigation';
 import { inventoryTransaction } from './products';
 
 export interface orderData {
+  id: string;
   name: string;
   createdBy: string;
   customer: string;
@@ -23,10 +24,11 @@ export interface orderData {
 }
 
 export type orderItemData = {
-  orderId: string;
+  id?: string;
+  product: string;
   productId: string;
   quantity?: number;
-  priceCents?: number;
+  price?: number;
 };
 
 export type orderItemChanges = {
@@ -91,23 +93,19 @@ export async function createOrder(prevState: any, formData: FormData) {
 
       // order line item data
       const itemData = {
-        productName: formData.getAll('productName'),
+        productId: formData.getAll('productId'),
         quantity: formData.getAll('quantity'),
         price: formData.getAll('price'),
       };
       // check for items
-      if (itemData.productName[0] === '') return { newId };
+      if (itemData.productId[0] === '') return { newId };
       else {
-        // switch product names to product ids
+        // create array of items to insert
         const items = [];
-        for (let i = 0; i < itemData.productName.length; i++) {
-          const [id] = await tx
-            .select({ id: products.id })
-            .from(products)
-            .where(eq(products.name, itemData.productName[i]));
+        for (let i = 0; i < itemData.productId.length; i++) {
           items.push({
             orderId: newId.id,
-            productId: id.id,
+            productId: itemData.productId[i],
             quantity: itemData.quantity[i],
             priceCents: Number(itemData.price[i]) * 100,
           });
@@ -161,19 +159,24 @@ export async function updateOrder(prevState: any, formData: FormData) {
       status: JSON.parse(formData.get('status')),
     };
     const order = updateSchema.parse(data);
-    const updatedOrder: typeof orders.$inferInsert = {
-      name: order.name,
-      createdById: order.createdBy,
-      customerId: order.customer,
-      status: order.status,
-      totalCents: order.totalCents,
-    };
+
     await db.transaction(async (tx) => {
+      const [customerId] = await tx
+        .select({ id: customers.id })
+        .from(customers)
+        .where(eq(customers.name, order.customer));
+      const updatedOrder: typeof orders.$inferInsert = {
+        id: order.id,
+        name: order.name,
+        createdById: order.createdBy,
+        customerId: customerId.id,
+        status: order.status,
+        totalCents: order.totalCents,
+      };
       await tx
         .update(orders)
         .set(updatedOrder)
-        .where(eq(orders.id, `${order.id}`))
-        .returning({ id: orders.id });
+        .where(eq(orders.id, updatedOrder.id));
       if (updatedOrder.status) {
         const items = await tx
           .select()
@@ -208,40 +211,65 @@ export async function updateOrder(prevState: any, formData: FormData) {
   redirect('/dashboard');
 }
 
-export async function modifyOrderItems(data: FormData) {
+export async function modifyOrderItems(prevState: any, formData: FormData) {
   try {
-    // transform formdata to zod schema
-    const removals = JSON.parse(data.get('remove'));
-    const changes = JSON.parse(data.get('changes'));
-    const id = data.get('id');
-    const addOrUpdate = orderItemsSchema.parse(changes);
-    const remove = orderItemsSchema.parse(removals);
-    return await db.transaction(async (tx) => {
-      // insert/update each new item
-      if (addOrUpdate.length) {
-        for (let i = 0; i < addOrUpdate.length; i++) {
+    // order line item data
+    const itemData = {
+      productId: formData.getAll('productId'),
+      quantity: formData.getAll('quantity'),
+      price: formData.getAll('price'),
+    };
+    const id = formData.get('id');
+    // check for removing all items and no items to update case
+    if (itemData.productId[0] === '') {
+      await db.transaction(async (tx) => {
+        const remove = await tx
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, id));
+        if (remove) {
+          remove.forEach(
+            async (item) =>
+              await tx.delete(orderItems).where(eq(orderItems.id, item.id))
+          );
+        }
+      });
+      return;
+    } else {
+      // create array of items to upsert & delete
+      const items = [];
+      for (let i = 0; i < itemData.productId.length; i++) {
+        items.push({
+          orderId: id,
+          productId: itemData.productId[i],
+          quantity: itemData.quantity[i],
+          priceCents: Number(itemData.price[i]) * 100,
+        });
+      }
+      const verifiedItems = orderItemsSchema.parse(items);
+      return await db.transaction(async (tx) => {
+        // get current list of items and find rows removed
+        const currentItems = await tx
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, id));
+        for (let i = 0; i < currentItems.length; i++) {
+          if (!itemData.productId.includes(currentItems[i].productId)) {
+            tx.delete(orderItems).where(eq(orderItems.id, currentItems[i].id));
+          }
+        }
+        // upsert all other items
+        verifiedItems.forEach(async (item) => {
           await tx
             .insert(orderItems)
-            .values(addOrUpdate[i])
+            .values(item)
             .onConflictDoUpdate({
               target: [orderItems.id, orderItems.productId],
-              set: { ...addOrUpdate[i] },
+              set: { ...item },
             });
-        }
-      }
-      // delete
-      if (remove.length) {
-        for (let i = 0; i < remove.length; i++)
-          await tx
-            .delete(orderItems)
-            .where(
-              and(
-                eq(orderItems.orderId, `${id}`),
-                eq(orderItems.productId, `${remove[i].productId}`)
-              )
-            );
-      }
-    });
+        });
+      });
+    }
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error('OrderItems update error', err);
@@ -266,7 +294,7 @@ export async function deleteOrder(orderId: string) {
 export const getOrdersForDashboard = unstable_cache(
   async () => {
     const data = await db.query.orders.findMany({
-      orderBy: [asc(orders.createdAt)],
+      orderBy: [desc(orders.createdAt)],
       limit: 25,
       columns: { lastUpdated: false, createdAt: false, createdById: false },
     });
@@ -284,8 +312,26 @@ export async function getOneOrder(orderId: string) {
     return await db.query.orders.findFirst({
       where: eq(orders.id, orderId),
       with: {
-        ordersToOrderItems: true,
-        customers: true,
+        ordersToOrderItems: {
+          columns: {
+            productId: false,
+            orderId: false,
+          },
+          with: {
+            product: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        customers: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   } catch (err) {
