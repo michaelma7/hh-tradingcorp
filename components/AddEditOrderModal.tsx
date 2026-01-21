@@ -20,6 +20,7 @@ import {
   orderData,
   orderItemData,
 } from '@/actions/orders';
+import { productsForOrders } from '@/actions/products';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
 import Submit from './Submit';
@@ -31,7 +32,7 @@ export default function AddEditOrderModal({
   orderData,
   lineItems,
 }: {
-  productData: { key: string; code: string; name: string }[];
+  productData: productsForOrders[];
   edit: boolean;
   orderData?: orderData;
   lineItems?: orderItemData[];
@@ -44,12 +45,14 @@ export default function AddEditOrderModal({
   const initState = { message: null };
   const formAction = async (prevState: any, formData: FormData) => {
     if (edit) {
+      for (const item of items) formData.append('productId', item.productId);
       formData.append('id', orderData!.id);
       formData.append('totalCents', JSON.stringify(total * 100));
       formData.set('status', JSON.stringify(deliveryStatus));
       await modifyOrderItems(prevState, formData);
       await updateOrder(prevState, formData);
     } else {
+      for (const item of items) formData.append('productId', item.productId);
       formData.append('totalCents', JSON.stringify(total * 100));
       formData.set('status', JSON.stringify(deliveryStatus));
       await createOrder(prevState, formData);
@@ -61,7 +64,6 @@ export default function AddEditOrderModal({
     : [
         {
           id: '1',
-          product: '',
           productId: '',
           quantity: 0,
           price: 0,
@@ -75,7 +77,6 @@ export default function AddEditOrderModal({
       ...items,
       {
         id: newId.toString(),
-        product: '',
         productId: '',
         quantity: 0,
         price: 0,
@@ -181,14 +182,13 @@ export default function AddEditOrderModal({
                         type='text'
                         label='Product'
                         labelPlacement='outside-left'
-                        name='productName'
+                        name='product'
                         items={productData}
-                        value={item.product}
-                        defaultInputValue={item.product}
+                        value={item.productId}
+                        defaultInputValue={item.productId}
                         onSelectionChange={(key) => {
                           const id = JSON.stringify(key);
-                          updateItem(item.id!, 'product', id);
-                          updateItem(item.id!, 'productId', id);
+                          updateItem(item.id!, 'productId', JSON.parse(id));
                         }}
                         className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                       >
