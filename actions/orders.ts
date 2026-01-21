@@ -25,7 +25,6 @@ export interface orderData {
 
 export type orderItemData = {
   id?: string;
-  product: string;
   productId: string;
   quantity?: number;
   price?: number;
@@ -67,7 +66,6 @@ export async function createOrder(prevState: any, formData: FormData) {
       status: JSON.parse(formData.get('status')),
     };
     const order = orderSchema.parse(data);
-
     await db.transaction(async (tx) => {
       const [user] = await tx
         .select({ userId: users.id })
