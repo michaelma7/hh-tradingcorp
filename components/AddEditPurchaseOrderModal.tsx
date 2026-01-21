@@ -43,10 +43,14 @@ export default function AddEditPurchaseOrderModal({
   const initState = { message: null };
   const formAction = (prevState: any, formData: FormData) => {
     if (edit) {
+      for (const item of items) formData.append('productId', item.productId);
       formData.append('id', orderData!.id);
       modifyPurchaseOrderItems(prevState, formData);
       updatePurchaseOrder(prevState, formData);
-    } else createPurchaseOrder(prevState, formData);
+    } else {
+      for (const item of items) formData.append('productId', item.productId);
+      createPurchaseOrder(prevState, formData);
+    }
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
 
