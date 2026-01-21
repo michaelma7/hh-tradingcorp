@@ -20,7 +20,7 @@ export interface purchaseOrderData {
 
 export type purchaseOrderItem = {
   id?: string;
-  product: string;
+  productId: string;
   quantity: number;
   price: number;
   expirationDate: string;
@@ -50,11 +50,11 @@ const updateSchema = purchaseOrderSchema.extend({
   id: z.string().uuid(),
 });
 
-export async function createPurchaseOrder(prevState: any, data: FormData) {
+export async function createPurchaseOrder(prevState: any, formData: FormData) {
   try {
     const inputs = {
-      orderDate: data.get('orderDate'),
-      status: data.get('status'),
+      orderDate: formData.get('orderDate'),
+      status: formData.get('status'),
     };
     const purchaseOrder = purchaseOrderSchema.parse(inputs);
     await db.transaction(async (tx) => {
@@ -69,10 +69,10 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
         .onConflictDoNothing()
         .returning({ id: purchaseOrders.id });
       const items = {
-        productId: data.getAll('product'),
-        quantity: data.getAll('quantity'),
-        price: data.getAll('price'),
-        expirationDate: data.getAll('expirationDate'),
+        productId: formData.getAll('productId'),
+        quantity: formData.getAll('quantity'),
+        price: formData.getAll('price'),
+        expirationDate: formData.getAll('expirationDate'),
       };
       const itemsWithId = [];
       for (let i = 0; i < items.productId.length; i++) {
@@ -122,12 +122,13 @@ export async function createPurchaseOrder(prevState: any, data: FormData) {
   redirect('/dashboard');
 }
 
-export async function updatePurchaseOrder(prevState: any, data: FormData) {
+export async function updatePurchaseOrder(prevState: any, formData: FormData) {
   try {
     const inputs = {
-      id: data.get('id'),
-      orderDate: data.get('orderDate'),
-      status: data.get('status'),
+      id: formData.get('id'),
+      orderDate: formData.get('orderDate'),
+      status: formData.get('status'),
+      expirationDate: formData.getAll('expirationDate'),
     };
     const update = updateSchema.parse(inputs);
     await db.transaction(async (tx) => {
@@ -166,39 +167,74 @@ export async function updatePurchaseOrder(prevState: any, data: FormData) {
   redirect('/dashboard');
 }
 
-export async function modifyPurchaseOrderItems(data: FormData) {
+export async function modifyPurchaseOrderItems(
+  prevState: any,
+  formData: FormData
+) {
   try {
-    const changes = JSON.parse(data.get('changes'));
-    const removals = JSON.parse(data.get('remove'));
-    const id = data.get('id');
-    const addOrUpdate = itemsSchema.parse(changes);
-    const remove = itemsSchema.parse(removals);
-    await db.transaction(async (tx) => {
-      // insert/update each new item
-      if (addOrUpdate.length) {
-        for (let i = 0; i < addOrUpdate.length; i++) {
+    // order line item data
+    const itemData = {
+      productId: formData.getAll('productId'),
+      quantity: formData.getAll('quantity'),
+      price: formData.getAll('price'),
+      expirationDate: formData.getAll('expirationDate'),
+    };
+    const id = formData.get('id');
+    // check for removing all items and no items to update case
+    if (itemData.productId[0] === '') {
+      await db.transaction(async (tx) => {
+        const remove = await tx
+          .select()
+          .from(purchaseOrderItems)
+          .where(eq(purchaseOrderItems.purchaseOrderId, id));
+        if (remove) {
+          remove.forEach(
+            async (item) =>
+              await tx
+                .delete(purchaseOrderItems)
+                .where(eq(purchaseOrderItems.id, item.id))
+          );
+        }
+      });
+      return;
+    } else {
+      // create array of items to upsert & delete
+      const items = [];
+      for (let i = 0; i < itemData.productId.length; i++) {
+        items.push({
+          purchaseOrderId: id,
+          productId: itemData.productId[i],
+          quantity: Number(itemData.quantity[i]),
+          priceCents: Number(itemData.price[i]) * 100,
+          expirationDate: itemData.expirationDate[i],
+        });
+      }
+      const verifiedItems = itemsSchema.parse(items);
+      return await db.transaction(async (tx) => {
+        // get current list of items and find rows removed
+        const currentItems = await tx
+          .select()
+          .from(purchaseOrderItems)
+          .where(eq(purchaseOrderItems.purchaseOrderId, id));
+        for (let i = 0; i < currentItems.length; i++) {
+          if (!itemData.productId.includes(currentItems[i].productId)) {
+            tx.delete(purchaseOrderItems).where(
+              eq(purchaseOrderItems.id, currentItems[i].id)
+            );
+          }
+        }
+        // upsert all other items
+        verifiedItems.forEach(async (item) => {
           await tx
             .insert(purchaseOrderItems)
-            .values(addOrUpdate[i])
+            .values(item)
             .onConflictDoUpdate({
               target: [purchaseOrderItems.id, purchaseOrderItems.productId],
-              set: { ...addOrUpdate[i] },
+              set: { ...item },
             });
-        }
-      }
-      // delete
-      if (remove.length) {
-        for (let i = 0; i < remove.length; i++)
-          await tx
-            .delete(purchaseOrderItems)
-            .where(
-              and(
-                eq(purchaseOrderItems.purchaseOrderId, `${id}`),
-                eq(purchaseOrderItems.productId, `${remove[i].productId}`)
-              )
-            );
-      }
-    });
+        });
+      });
+    }
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error('PurchaseOrderItems update error', err);
@@ -264,6 +300,7 @@ export async function getOnePurchaseOrder(purchaseOrderId: string) {
             product: {
               columns: {
                 name: true,
+                id: true,
               },
             },
           },
