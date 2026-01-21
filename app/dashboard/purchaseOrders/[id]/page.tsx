@@ -3,6 +3,7 @@ import {
   deletePurchaseOrder,
   purchaseOrderItem,
 } from '@/actions/purchaseOrders';
+import { getProductsforOrders } from '@/actions/products';
 import { redirect } from 'next/navigation';
 import DeleteForm from '@/components/DeleteForm';
 import AddEditPurchaseOrderModal from '@/components/AddEditPurchaseOrderModal';
@@ -14,12 +15,13 @@ export default async function PurchaseOrderPage({
 }) {
   const { id } = await params;
   const purchaseOrder = await getOnePurchaseOrder(id);
+  const products = await getProductsforOrders();
   const lineItems: purchaseOrderItem[] = [];
   if (purchaseOrder!.items) {
     purchaseOrder!.items.forEach((item) => {
       lineItems.push({
         id: item.id,
-        product: item.product.name,
+        productId: item.product.name,
         quantity: item.quantity ? item.quantity : 0,
         price: item.priceCents ? item.priceCents / 100 : 0,
         expirationDate: item.expirationDate ? item.expirationDate : '',
@@ -37,6 +39,7 @@ export default async function PurchaseOrderPage({
           edit={true}
           orderData={purchaseOrder}
           lineItems={lineItems}
+          productData={products}
         />
         <DeleteForm id={id} action={deletePurchaseOrder} />
       </div>

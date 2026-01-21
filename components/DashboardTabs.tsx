@@ -88,7 +88,10 @@ export default function DashboardTabs({ data }: { data: any }) {
         </div>
       </Tab>
       <Tab key='purchaseOrders' title='Purchase Orders'>
-        <AddEditPurchaseOrderModal edit={false} />
+        <AddEditPurchaseOrderModal
+          edit={false}
+          productData={data.productData}
+        />
         <Button color='primary' size='md' radius='md'>
           <Link href='/dashboard/purchaseOrders'>View All Purchase Orders</Link>
         </Button>

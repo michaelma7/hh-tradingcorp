@@ -12,6 +12,8 @@ import {
   NumberInput,
   RadioGroup,
   Radio,
+  Autocomplete,
+  AutocompleteItem,
 } from '@heroui/react';
 import Submit from './Submit';
 import {
@@ -21,6 +23,7 @@ import {
   purchaseOrderData,
   purchaseOrderItem,
 } from '@/actions/purchaseOrders';
+import { productsForOrders } from '@/actions/products';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
 import { parseDate } from '@internationalized/date';
@@ -29,17 +32,19 @@ export default function AddEditPurchaseOrderModal({
   edit,
   orderData,
   lineItems,
+  productData,
 }: {
   edit: boolean;
   orderData?: purchaseOrderData;
   lineItems?: purchaseOrderItem[];
+  productData: productsForOrders[];
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
   const formAction = (prevState: any, formData: FormData) => {
     if (edit) {
       formData.append('id', orderData!.id);
-      modifyPurchaseOrderItems(formData);
+      modifyPurchaseOrderItems(prevState, formData);
       updatePurchaseOrder(prevState, formData);
     } else createPurchaseOrder(prevState, formData);
   };
@@ -50,7 +55,7 @@ export default function AddEditPurchaseOrderModal({
     : [
         {
           id: '1',
-          product: '',
+          productId: '',
           quantity: 0,
           price: 0,
           expirationDate: '',
@@ -63,7 +68,7 @@ export default function AddEditPurchaseOrderModal({
       ...items,
       {
         id: newId.toString(),
-        product: '',
+        productId: '',
         quantity: 0,
         price: 0,
         expirationDate: '',
@@ -132,17 +137,30 @@ export default function AddEditPurchaseOrderModal({
                       key={item.id}
                       className='grid grid-cols-12 gap-4 items-center'
                     >
-                      <Input
+                      <Autocomplete
                         isClearable
                         type='text'
                         label='Product'
-                        name='product'
-                        value={item.product}
-                        onChange={(e) =>
-                          updateItem(item.id!, 'product', e.target.value)
-                        }
+                        labelPlacement='outside-left'
+                        name='productId'
+                        items={productData}
+                        value={item.productId}
+                        defaultInputValue={item.productId}
+                        onSelectionChange={(key) => {
+                          const id = JSON.stringify(key);
+                          updateItem(item.id!, 'productId', id);
+                        }}
                         className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                      />
+                      >
+                        {(product) => (
+                          <AutocompleteItem
+                            className='bg-white'
+                            key={product.key}
+                          >
+                            {product.name}
+                          </AutocompleteItem>
+                        )}
+                      </Autocomplete>
                       <NumberInput
                         type='number'
                         label='Quantity'
