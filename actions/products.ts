@@ -24,6 +24,12 @@ export interface inventoryTransaction {
   referenceId: string;
 }
 
+export interface productsForOrders {
+  key: string;
+  code: string;
+  name: string;
+}
+
 const productSchema = z.object({
   name: z.string().trim(),
   commonName: z.string().optional().or(z.literal('')),
