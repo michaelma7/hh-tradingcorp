@@ -9,12 +9,16 @@ export default async function Orders() {
   return (
     <div>
       <AddEditOrderModal productData={products} edit={false} />
-      <TableGenerator
-        data={orders}
-        className='bg-white'
-        label={'All Orders'}
-        link={'orders'}
-      />
+      {orders.length ? (
+        <TableGenerator
+          data={orders}
+          className=''
+          label={'All Orders'}
+          link={'orders'}
+        />
+      ) : (
+        <div>Nothing to display</div>
+      )}
     </div>
   );
 }
