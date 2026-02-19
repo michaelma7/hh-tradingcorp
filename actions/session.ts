@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 import { users } from '@/db/schema';
 import { JWTPayload, SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 type Session = JWTPayload;
 const secretKey = process.env.SESSION_SECRET;
