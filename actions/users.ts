@@ -73,8 +73,10 @@ export async function updateUser(
       where: eq(users.email, data.data.email),
     });
     if (!current) return new Error('Invalid Username or password');
+
     const pw = await bcrypt.compare(data.data.old, current.password);
     if (!pw) return new Error('Invalid Username or password');
+
     await db
       .update(users)
       .set({

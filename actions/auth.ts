@@ -3,12 +3,26 @@ import { db } from '@/db/db';
 import { eq } from 'drizzle-orm';
 import { users } from '@/db/schema';
 import { createSession, deleteSession } from './session';
-import { SafeParseSuccess, z } from 'zod';
+import { ZodSafeParseSuccess, z } from 'zod/v4';
 import bcrypt from 'bcrypt';
 import { redirect } from 'next/navigation';
 
+export type UserFormState = {
+  message?: string | null;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: {
+      email?: string[];
+      password?: string[];
+      old?: string[];
+      confirm?: string[];
+      id?: string[];
+    };
+  };
+} | null;
+
 const authSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email.' }).trim(),
+  email: z.email({ message: 'Please enter a valid email.' }).trim(),
   password: z
     .string()
     .min(8, { message: 'Be at least 8 characters long' })
@@ -22,7 +36,7 @@ const authSchema = z.object({
 
 const signUpSchema = z
   .object({
-    email: z.string().email({ message: 'Please enter a valid email.' }).trim(),
+    email: z.email({ message: 'Please enter a valid email.' }).trim(),
     password: z
       .string()
       .min(8, { message: 'Be at least 8 characters long' })
@@ -32,7 +46,7 @@ const signUpSchema = z
         message: 'Contain at least one special character.',
       })
       .trim(),
-    confirmPassword: z.string(),
+    confirmPassword: z.string().trim(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -41,7 +55,7 @@ const signUpSchema = z
 
 export async function signin({
   data,
-}: SafeParseSuccess<{
+}: ZodSafeParseSuccess<{
   email: string;
   password: string;
 }>) {
@@ -64,7 +78,7 @@ export async function signin({
 
 export async function signup({
   data,
-}: SafeParseSuccess<{
+}: ZodSafeParseSuccess<{
   email: string;
   password: string;
 }>) {
@@ -96,7 +110,10 @@ export async function signout() {
   redirect('/signin');
 }
 
-export async function registerUser(prevState: any, formData: FormData) {
+export async function registerUser(
+  prevState: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
   try {
     const data = signUpSchema.safeParse({
       email: formData.get('email'),
@@ -104,7 +121,7 @@ export async function registerUser(prevState: any, formData: FormData) {
       confirmPassword: formData.get('confirmPassword'),
     });
 
-    if (!data.success) return { errors: data.error.flatten().fieldErrors };
+    if (!data.success) return { errors: z.flattenError(data.error) };
     await signup(data);
   } catch (err) {
     console.error(err);
@@ -113,13 +130,16 @@ export async function registerUser(prevState: any, formData: FormData) {
   redirect('/dashboard');
 }
 
-export async function signInUser(prevState: any, formData: FormData) {
+export async function signInUser(
+  prevState: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
   try {
     const data = authSchema.safeParse({
       email: formData.get('email'),
       password: formData.get('password'),
     });
-    if (!data.success) return { errors: data.error.flatten().fieldErrors };
+    if (!data.success) return { errors: z.flattenError(data.error) };
     await signin(data);
   } catch (err) {
     console.error(err);

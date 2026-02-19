@@ -9,7 +9,7 @@ import { useFormAction } from '@/utils/useFormAction';
 import { UserFormState } from '@/actions/auth';
 
 export default function EditUserForm({ data }: { data: userData }) {
-  const formAction = (prevState: any, formData: FormData) => {
+  const formAction = (prevState: UserFormState, formData: FormData) => {
     formData.append('id', data.id);
     return updateUser(prevState, formData);
   };
