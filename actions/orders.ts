@@ -9,7 +9,7 @@ import {
   users,
   inventoryTransactions,
 } from '@/db/schema';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { inventoryTransaction } from './products';
@@ -36,7 +36,7 @@ export type orderItemChanges = {
 };
 
 const orderItemSchema = z.object({
-  orderId: z.string().uuid(),
+  orderId: z.uuid(),
   productId: z.string(),
   quantity: z.coerce.number().optional(),
   priceCents: z.coerce.number().optional(),
@@ -53,7 +53,7 @@ const orderSchema = z.object({
 });
 
 const updateSchema = orderSchema.extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export async function createOrder(prevState: any, formData: FormData) {

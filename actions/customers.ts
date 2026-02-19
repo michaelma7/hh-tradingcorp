@@ -2,14 +2,14 @@
 import { db } from '@/db/db';
 import { eq, asc } from 'drizzle-orm';
 import { customers } from '@/db/schema';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export interface customersData {
   id: string;
   name: string;
-  location: string;
+  location: string | null;
 }
 
 const customerSchema = z.object({
@@ -18,7 +18,7 @@ const customerSchema = z.object({
 });
 
 const updateSchema = customerSchema.extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export async function createCustomer(prevState: any, data: FormData) {
@@ -82,7 +82,7 @@ export const getCustomersForDashboard = unstable_cache(
   {
     tags: ['customers'],
     revalidate: 120,
-  }
+  },
 );
 
 export async function getOneCustomer(customerId: string) {

@@ -7,7 +7,7 @@ import {
   products,
   inventoryTransactions,
 } from '@/db/schema';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { inventoryTransaction } from './products';
@@ -32,8 +32,8 @@ export type purchaseOrderItemChanges = {
 };
 
 const purchaseOrderItemSchema = z.object({
-  purchaseOrderId: z.string().uuid(),
-  productId: z.string().uuid(),
+  purchaseOrderId: z.uuid(),
+  productId: z.uuid(),
   quantity: z.coerce.number(),
   priceCents: z.coerce.number(),
   expirationDate: z.string(),
@@ -47,7 +47,7 @@ const purchaseOrderSchema = z.object({
 });
 
 const updateSchema = purchaseOrderSchema.extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export async function createPurchaseOrder(prevState: any, formData: FormData) {

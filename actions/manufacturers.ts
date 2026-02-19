@@ -2,14 +2,14 @@
 import { db } from '@/db/db';
 import { eq, asc } from 'drizzle-orm';
 import { manufacturers } from '@/db/schema';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export interface manufacturerData {
-  id: string;
+  id?: string;
   name: string;
-  contact: string;
+  contact: string | null;
 }
 
 const manufacturerSchema = z.object({
@@ -18,12 +18,12 @@ const manufacturerSchema = z.object({
 });
 
 const updateSchema = manufacturerSchema.extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export async function createManfacturer(prevState: any, data: FormData) {
   try {
-    const newManu: manufacturerData = manufacturerSchema.parse({
+    const newManu = manufacturerSchema.parse({
       name: data.get('name'),
       contact: data.get('contact'),
     });
@@ -91,7 +91,7 @@ export const getManfacturersForDashboard = unstable_cache(
   {
     tags: ['manufacturers'],
     revalidate: 120,
-  }
+  },
 );
 
 export async function getOneManufacturer(manufacturerId: string) {
