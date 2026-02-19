@@ -11,7 +11,7 @@ export default async function PurchaseOrders() {
       <AddEditPurchaseOrderModal edit={false} productData={products} />
       <TableGenerator
         data={purchaseOrders}
-        className='bg-white'
+        className=''
         label={'All Purchase Orders'}
         link={'purchaseOrders'}
       />

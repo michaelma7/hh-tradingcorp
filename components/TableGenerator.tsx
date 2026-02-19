@@ -42,20 +42,18 @@ export default function TableGenerator({
         if (i === vals.length - 1) {
           const rowLinkStr = linkStr + `${row.id}`;
           rowCells.push(
-            <TableCell className='bg-white'>
+            <TableCell>
               <Link href={rowLinkStr}>
                 <CirclePlus size={16} />
               </Link>
-            </TableCell>
+            </TableCell>,
           );
           continue;
         } else if (typeof vals[i] === 'boolean') {
-          rowCells.push(
-            <TableCell className='bg-white'>{vals[i] ? 'Yes' : 'No'}</TableCell>
-          );
+          rowCells.push(<TableCell>{vals[i] ? 'Yes' : 'No'}</TableCell>);
           continue;
         }
-        rowCells.push(<TableCell className='bg-white'>{vals[i]}</TableCell>);
+        rowCells.push(<TableCell>{vals[i]}</TableCell>);
       }
       rows.push(<TableRow key={row.id}>{rowCells}</TableRow>);
     }
@@ -63,9 +61,7 @@ export default function TableGenerator({
       <Table aria-label={label} className={className}>
         <TableHeader columns={tableColumns}>
           {(column) => (
-            <TableColumn className='bg-white' key={column.id}>
-              {column.label}
-            </TableColumn>
+            <TableColumn key={column.id}>{column.label}</TableColumn>
           )}
         </TableHeader>
         <TableBody items={data} emptyContent={'No rows to display'}>

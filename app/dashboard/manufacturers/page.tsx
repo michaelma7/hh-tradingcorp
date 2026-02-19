@@ -10,7 +10,7 @@ export default async function Orders() {
       <AddEditManufacturerModal edit={false} />
       <TableGenerator
         data={manufacturers}
-        className='bg-white'
+        className=''
         label={'All Manufacturers'}
         link={'manufacturers'}
       />

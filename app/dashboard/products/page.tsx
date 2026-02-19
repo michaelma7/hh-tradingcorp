@@ -4,13 +4,12 @@ import TableGenerator from '@/components/TableGenerator';
 
 export default async function Orders() {
   const products = await getAllProducts();
-
   return (
     <div>
       <AddEditProductModal edit={false} />
       <TableGenerator
         data={products}
-        className='bg-white'
+        className=''
         label={'All Products'}
         link={'products'}
       />

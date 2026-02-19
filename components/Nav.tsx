@@ -1,5 +1,5 @@
 'use client';
-import { Button, Input } from '@heroui/react';
+import { Button } from '@heroui/react';
 import { signout } from '@/actions/auth';
 import Link from 'next/link';
 import { useProvider } from '@/app/CurrentUserProvider';
@@ -20,7 +20,6 @@ export default function Nav() {
         </Button>
       </div>
       <div className='w-1/2'>
-        <Input placeholder='search' />
         <span id='username'>{currentUser}</span>
       </div>
     </nav>

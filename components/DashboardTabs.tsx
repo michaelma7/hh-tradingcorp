@@ -19,9 +19,9 @@ import Link from 'next/link';
 export default function DashboardTabs({ data }: { data: any }) {
   const orderRows = data.orders.map((order) => {
     return (
-      <TableRow key={order.id} className='bg-white'>
+      <TableRow key={order.id} className=''>
         <TableCell>{order.name}</TableCell>
-        <TableCell>{order.customerId}</TableCell>
+        <TableCell>{order.customers.name}</TableCell>
         <TableCell>${order.totalCents / 100}</TableCell>
         <TableCell>{order.status}</TableCell>
       </TableRow>
@@ -30,7 +30,7 @@ export default function DashboardTabs({ data }: { data: any }) {
 
   const productRows = data.products.map((product) => {
     return (
-      <TableRow key={product.id} className='bg-white'>
+      <TableRow key={product.id} className=''>
         <TableCell>{product.name}</TableCell>
         <TableCell>{product.quantity}</TableCell>
         <TableCell>{product.manufacturedBy}</TableCell>
@@ -41,7 +41,7 @@ export default function DashboardTabs({ data }: { data: any }) {
 
   const purchaseOrderRows = data.purchaseOrders.map((purchaseOrder) => {
     return (
-      <TableRow key={purchaseOrder.id} className='bg-white'>
+      <TableRow key={purchaseOrder.id} className=''>
         <TableCell>{purchaseOrder.id}</TableCell>
         <TableCell>{purchaseOrder.orderDate}</TableCell>
         <TableCell>{purchaseOrder.status}</TableCell>
@@ -51,7 +51,7 @@ export default function DashboardTabs({ data }: { data: any }) {
 
   const customerRows = data.customers.map((customer) => {
     return (
-      <TableRow key={customer.id} className='bg-white'>
+      <TableRow key={customer.id} className=''>
         <TableCell>{customer.name}</TableCell>
         <TableCell>{customer.location}</TableCell>
       </TableRow>
@@ -60,7 +60,7 @@ export default function DashboardTabs({ data }: { data: any }) {
 
   const manufacturerRows = data.manufacturers.map((manufacturer) => {
     return (
-      <TableRow key={manufacturer.id} className='bg-white'>
+      <TableRow key={manufacturer.id} className=''>
         <TableCell>{manufacturer.name}</TableCell>
         <TableCell>{manufacturer.contact}</TableCell>
       </TableRow>
