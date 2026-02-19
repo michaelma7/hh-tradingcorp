@@ -1,19 +1,19 @@
 'use server';
 import { db } from '@/db/db';
-import { eq, asc, sql } from 'drizzle-orm';
-import { products, inventoryTransactions, manufacturers } from '@/db/schema';
-import { z } from 'zod';
+import { eq, asc } from 'drizzle-orm';
+import { products, manufacturers } from '@/db/schema';
+import { z } from 'zod/v4';
 import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export interface productData {
-  id: string;
+  id?: string;
   name: string;
   commonName?: string;
-  manufacturer: string;
-  imageLink?: string;
-  quantity: number;
-  reserved: number;
+  manufacturedBy: { id: string; name: string };
+  imageLink?: string | null;
+  quantity: number | null;
+  reserved: number | null;
 }
 
 export type transactionType = 'received' | 'ordered' | 'return' | 'sale';
@@ -36,21 +36,16 @@ const productSchema = z.object({
   manufacturedBy: z.string().trim(),
   quantity: z.coerce.number().default(0),
   reserved: z.coerce.number().default(0),
-  imageLink: z
-    .string()
-    .url('Must be valid URL')
-    .trim()
-    .optional()
-    .or(z.literal('')),
+  imageLink: z.url('Must be valid URL').trim().optional().or(z.literal('')),
 });
 
 const updateSchema = productSchema.extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 const inventorySchema = z.object({
-  productId: z.string().uuid(),
-  referenceId: z.string().uuid(),
+  productId: z.uuid(),
+  referenceId: z.uuid(),
   quantity: z.number(),
   transaction: z.enum(['received', 'ordered', 'return', 'sale']),
 });
@@ -146,24 +141,26 @@ export const getProductsForDashboard = unstable_cache(
   {
     tags: ['products'],
     revalidate: 120,
-  }
+  },
 );
 
 export async function getOneProduct(productId: string) {
   try {
-    return await db
-      .select({
-        id: products.id,
-        name: products.name,
-        commonName: products.commonName,
-        quantity: products.quantity,
-        reserved: products.reserved,
-        current: products.current,
-        manufacturer: products.manufacturedBy,
-        imageLink: products.imageLink,
-      })
-      .from(products)
-      .where(eq(products.id, `${productId}`));
+    return await db.query.products.findFirst({
+      where: eq(products.id, `${productId}`),
+      with: {
+        manufacturedBy: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      columns: {
+        commonName: false,
+        lastUpdated: false,
+      },
+    });
   } catch (err) {
     console.error(`Product data fetch error ${err}`);
     throw err;
