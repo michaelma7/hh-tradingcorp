@@ -1,6 +1,6 @@
 'use server';
 import { db } from '@/db/db';
-import { eq, asc, and, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc } from 'drizzle-orm';
 import {
   orders,
   orderItems,
@@ -63,18 +63,18 @@ export async function createOrder(prevState: any, formData: FormData) {
       createdBy: formData.get('createdBy'),
       customer: formData.get('customer'),
       totalCents: Number(formData.get('totalCents')),
-      status: JSON.parse(formData.get('status')),
+      status: JSON.parse(formData.get('status') as string),
     };
     const order = orderSchema.parse(data);
     await db.transaction(async (tx) => {
       const [user] = await tx
         .select({ userId: users.id })
         .from(users)
-        .where(eq(users.email, order.createdBy));
+        .where(eq(users.email, `${order.createdBy}`));
       const [customer] = await tx
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.name, order.customer));
+        .where(eq(customers.name, `${order.customer}`));
       const newOrder: typeof orders.$inferInsert = {
         name: order.name,
         createdById: user.userId,
@@ -154,7 +154,7 @@ export async function updateOrder(prevState: any, formData: FormData) {
       createdBy: formData.get('createdBy'),
       customer: formData.get('customer'),
       totalCents: Number(formData.get('totalCents')),
-      status: JSON.parse(formData.get('status')),
+      status: JSON.parse(formData.get('status') as string),
     };
     const order = updateSchema.parse(data);
 
@@ -162,7 +162,7 @@ export async function updateOrder(prevState: any, formData: FormData) {
       const [customerId] = await tx
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.name, order.customer));
+        .where(eq(customers.name, `${order.customer}`));
       const updatedOrder: typeof orders.$inferInsert = {
         id: order.id,
         name: order.name,
@@ -174,7 +174,7 @@ export async function updateOrder(prevState: any, formData: FormData) {
       await tx
         .update(orders)
         .set(updatedOrder)
-        .where(eq(orders.id, updatedOrder.id));
+        .where(eq(orders.id, `${updatedOrder.id}`));
       if (updatedOrder.status) {
         const items = await tx
           .select()
@@ -183,7 +183,7 @@ export async function updateOrder(prevState: any, formData: FormData) {
         await tx
           .update(inventoryTransactions)
           .set({ transaction: 'sale' })
-          .where(eq(inventoryTransactions.referenceId, order.id));
+          .where(eq(inventoryTransactions.referenceId, `${order.id}`));
         for (const item of items) {
           const deliveredItem: inventoryTransaction = {
             productId: item.productId,
@@ -224,11 +224,13 @@ export async function modifyOrderItems(prevState: any, formData: FormData) {
         const remove = await tx
           .select()
           .from(orderItems)
-          .where(eq(orderItems.orderId, id));
+          .where(eq(orderItems.orderId, `${id}`));
         if (remove) {
           remove.forEach(
             async (item) =>
-              await tx.delete(orderItems).where(eq(orderItems.id, item.id))
+              await tx
+                .delete(orderItems)
+                .where(eq(orderItems.id, `${item.id}`)),
           );
         }
       });
@@ -250,10 +252,12 @@ export async function modifyOrderItems(prevState: any, formData: FormData) {
         const currentItems = await tx
           .select()
           .from(orderItems)
-          .where(eq(orderItems.orderId, id));
+          .where(eq(orderItems.orderId, `${id}`));
         for (let i = 0; i < currentItems.length; i++) {
           if (!itemData.productId.includes(currentItems[i].productId)) {
-            tx.delete(orderItems).where(eq(orderItems.id, currentItems[i].id));
+            tx.delete(orderItems).where(
+              eq(orderItems.id, `${currentItems[i].id}`),
+            );
           }
         }
         // upsert all other items
@@ -295,6 +299,13 @@ export const getOrdersForDashboard = unstable_cache(
       orderBy: [desc(orders.createdAt)],
       limit: 25,
       columns: { lastUpdated: false, createdAt: false, createdById: false },
+      with: {
+        customers: {
+          columns: {
+            name: true,
+          },
+        },
+      },
     });
     return data ?? [];
   },
@@ -302,13 +313,13 @@ export const getOrdersForDashboard = unstable_cache(
   {
     tags: ['orders'],
     revalidate: 120,
-  }
+  },
 );
 
 export async function getOneOrder(orderId: string) {
   try {
     return await db.query.orders.findFirst({
-      where: eq(orders.id, orderId),
+      where: eq(orders.id, `${orderId}`),
       with: {
         ordersToOrderItems: {
           columns: {
