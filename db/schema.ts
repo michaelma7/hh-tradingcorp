@@ -37,7 +37,7 @@ export const customers = sqliteTable('customers', {
   id: id(),
   createdAt: createdAt(),
   name: text('name').notNull(),
-  location: text('location'),
+  location: text('location').default(''),
 });
 
 export const customersRelations = relations(customers, ({ many }) => ({
@@ -49,9 +49,9 @@ export const manufacturers = sqliteTable(
   {
     id: id(),
     name: text('name').notNull(),
-    contact: text('contact'),
+    contact: text('contact').default(''),
   },
-  (table) => [unique().on(table.name)]
+  (table) => [unique().on(table.name)],
 );
 
 export const manufacturerRelations = relations(manufacturers, ({ many }) => ({
@@ -61,9 +61,11 @@ export const manufacturerRelations = relations(manufacturers, ({ many }) => ({
 export const products = sqliteTable('products', {
   id: id(),
   name: text('name').notNull(),
-  commonName: text('common_name'),
-  manufacturedBy: text('manufactured_by').notNull(),
-  imageLink: text('link'),
+  commonName: text('common_name').default(''),
+  manufacturedBy: text('manufactured_by')
+    .notNull()
+    .references(() => manufacturers.id),
+  imageLink: text('link').default(''),
   quantity: integer('quantity').default(0),
   reserved: integer('reserved').default(0),
   current: integer('current').generatedAlwaysAs(sql`quantity - reserved`),
@@ -100,7 +102,7 @@ export const inventoryTransactionsRelations = relations(
       fields: [inventoryTransactions.productId],
       references: [products.id],
     }),
-  })
+  }),
 );
 
 export const orders = sqliteTable(
@@ -111,11 +113,13 @@ export const orders = sqliteTable(
     lastUpdated: lastUpdated(),
     name: text('name').notNull(),
     createdById: text('created_by_id').notNull(),
-    customerId: text('customer_id').references(() => customers.id),
+    customerId: text('customer_id')
+      .references(() => customers.id)
+      .notNull(),
     totalCents: integer('total_cents').notNull(),
     status: boolean('delivered').default(false).notNull(),
   },
-  (table) => [unique().on(table.createdById, table.name)]
+  (table) => [unique().on(table.createdById, table.name)],
 );
 
 export const ordersRelations = relations(orders, ({ many, one }) => ({
@@ -192,5 +196,5 @@ export const purchaseOrderItemsRelations = relations(
       fields: [purchaseOrderItems.productId],
       references: [products.id],
     }),
-  })
+  }),
 );
