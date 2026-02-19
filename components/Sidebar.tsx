@@ -38,7 +38,7 @@ export default function Sidebar() {
         ))}
       </div>
       <div className='absolute bottom-0 w-full left-0 px-4'>
-        <Button color='warning' onPress={signout}>
+        <Button color='danger' onPress={signout}>
           Sign Out
         </Button>
       </div>
