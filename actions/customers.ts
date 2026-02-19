@@ -9,8 +9,20 @@ import { redirect } from 'next/navigation';
 export interface customersData {
   id: string;
   name: string;
-  location: string | null;
+  location: string;
 }
+
+export type CustomerFormState = {
+  message?: string | null;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: {
+      name?: string[];
+      location?: string[];
+      id?: string[];
+    };
+  };
+} | null;
 
 const customerSchema = z.object({
   name: z.string().trim(),
@@ -21,44 +33,53 @@ const updateSchema = customerSchema.extend({
   id: z.uuid(),
 });
 
-export async function createCustomer(prevState: any, data: FormData) {
+export async function createCustomer(
+  prevState: CustomerFormState,
+  data: FormData,
+): Promise<CustomerFormState> {
   try {
-    const newCustomer = customerSchema.parse({
+    const newCustomer = customerSchema.safeParse({
       name: data.get('name'),
       location: data.get('location'),
     });
+    if (!newCustomer.success)
+      return { errors: z.flattenError(newCustomer.error) };
     await db
       .insert(customers)
       .values({
-        name: newCustomer.name,
-        location: newCustomer.location,
+        name: newCustomer.data.name,
+        location: newCustomer.data.location,
       })
       .onConflictDoNothing()
       .returning({ newId: customers.id });
   } catch (err) {
     console.error(`Insertion error: ${err}`);
   }
-  redirect('/dashboard');
+  redirect('/dashboard/customers');
 }
 
-export async function updateCustomer(prevState: any, data: FormData) {
+export async function updateCustomer(
+  prevState: CustomerFormState,
+  data: FormData,
+): Promise<CustomerFormState> {
   try {
-    const update = updateSchema.parse({
+    const update = updateSchema.safeParse({
       id: data.get('id'),
       name: data.get('name'),
       location: data.get('location'),
     });
+    if (!update.success) return { errors: z.flattenError(update.error) };
     await db
       .update(customers)
       .set({
-        name: update.name,
-        location: update.location,
+        name: update.data.name,
+        location: update.data.location,
       })
-      .where(eq(customers.id, `${update.id}`));
+      .where(eq(customers.id, `${update.data.id}`));
   } catch (err) {
     console.error(`Update Error ${err}`);
   }
-  redirect('/dashboard');
+  redirect('/dashboard/customers');
 }
 
 export async function deleteCustomer(customerId: number) {
@@ -67,7 +88,7 @@ export async function deleteCustomer(customerId: number) {
   } catch (err) {
     console.error(`Delete Error ${err}`);
   }
-  redirect('/dashboard');
+  redirect('/dashboard/customers');
 }
 
 export const getCustomersForDashboard = unstable_cache(

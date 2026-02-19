@@ -13,8 +13,9 @@ import {
   createCustomer,
   updateCustomer,
   customersData,
+  CustomerFormState,
 } from '@/actions/customers';
-import { useActionState } from 'react';
+import { useFormAction } from '@/utils/useFormAction';
 import { CirclePlus } from 'lucide-react';
 
 export default function AddEditCustomerModal({
@@ -26,13 +27,13 @@ export default function AddEditCustomerModal({
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const formAction = (prevState: any, formData: FormData) => {
+  const formAction = (prevState: CustomerFormState, formData: FormData) => {
     if (edit) {
-      formData.append('id', data!.id);
-      updateCustomer(prevState, formData);
-    } else createCustomer(prevState, formData);
+      formData.append('id', JSON.stringify(data!.id));
+      return updateCustomer(prevState, formData);
+    } else return createCustomer(prevState, formData);
   };
-  const [formState, submit, pending] = useActionState(formAction, initState);
+  const [formState, submit, pending] = useFormAction(formAction, initState);
   let customerName = '';
   let location = '';
   if (edit) {
