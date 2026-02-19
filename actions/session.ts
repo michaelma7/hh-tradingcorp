@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { users } from '@/db/schema';
 import { JWTPayload, SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 type Session = JWTPayload;
 const secretKey = process.env.SESSION_SECRET;
@@ -32,7 +33,7 @@ export async function getUserFromToken() {
   const session = (await cookies()).get('session')?.value;
   const payload = await decrypt(session);
   const user = await db.query.users.findFirst({
-    where: eq(users.id, payload!.userId),
+    where: eq(users.id, `${payload!.userId}`),
     columns: {
       id: true,
       email: true,

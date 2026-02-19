@@ -1,6 +1,6 @@
 'use server';
 import { db } from '@/db/db';
-import { eq, asc, and, sql } from 'drizzle-orm';
+import { eq, asc, sql } from 'drizzle-orm';
 import {
   purchaseOrders,
   purchaseOrderItems,
@@ -79,7 +79,7 @@ export async function createPurchaseOrder(prevState: any, formData: FormData) {
         const [id] = await tx
           .select({ id: products.id })
           .from(products)
-          .where(eq(products.name, items.productId[i]));
+          .where(eq(products.name, `${items.productId[i]}`));
         itemsWithId.push({
           purchaseOrderId: newId.id,
           productId: id.id,
@@ -169,7 +169,7 @@ export async function updatePurchaseOrder(prevState: any, formData: FormData) {
 
 export async function modifyPurchaseOrderItems(
   prevState: any,
-  formData: FormData
+  formData: FormData,
 ) {
   try {
     // order line item data
@@ -186,13 +186,13 @@ export async function modifyPurchaseOrderItems(
         const remove = await tx
           .select()
           .from(purchaseOrderItems)
-          .where(eq(purchaseOrderItems.purchaseOrderId, id));
+          .where(eq(purchaseOrderItems.purchaseOrderId, `${id}`));
         if (remove) {
           remove.forEach(
             async (item) =>
               await tx
                 .delete(purchaseOrderItems)
-                .where(eq(purchaseOrderItems.id, item.id))
+                .where(eq(purchaseOrderItems.id, `${item.id}`)),
           );
         }
       });
@@ -209,17 +209,18 @@ export async function modifyPurchaseOrderItems(
           expirationDate: itemData.expirationDate[i],
         });
       }
+      console.log(items);
       const verifiedItems = itemsSchema.parse(items);
       return await db.transaction(async (tx) => {
         // get current list of items and find rows removed
         const currentItems = await tx
           .select()
           .from(purchaseOrderItems)
-          .where(eq(purchaseOrderItems.purchaseOrderId, id));
+          .where(eq(purchaseOrderItems.purchaseOrderId, `${id}`));
         for (let i = 0; i < currentItems.length; i++) {
           if (!itemData.productId.includes(currentItems[i].productId)) {
             tx.delete(purchaseOrderItems).where(
-              eq(purchaseOrderItems.id, currentItems[i].id)
+              eq(purchaseOrderItems.id, `${currentItems[i].id}`),
             );
           }
         }
@@ -271,7 +272,7 @@ export const getPurchaseOrdersForDashboard = unstable_cache(
   {
     tags: ['purchaseOrders'],
     revalidate: 120,
-  }
+  },
 );
 
 export async function getPurchaseOrderItems(purchaseOrderId: string) {
@@ -289,7 +290,7 @@ export async function getPurchaseOrderItems(purchaseOrderId: string) {
 export async function getOnePurchaseOrder(purchaseOrderId: string) {
   try {
     return await db.query.purchaseOrders.findFirst({
-      where: (purchaseOrders, { eq }) => eq(purchaseOrders.id, purchaseOrderId),
+      where: eq(purchaseOrders.id, `${purchaseOrderId}`),
       with: {
         items: {
           columns: {
