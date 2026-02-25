@@ -9,8 +9,13 @@ import {
   Input,
   NumberInput,
 } from '@heroui/react';
-import { createProduct, updateProduct, productData } from '@/actions/products';
-import { useActionState } from 'react';
+import {
+  createProduct,
+  updateProduct,
+  productData,
+  ProductFormState,
+} from '@/actions/products';
+import { useFormAction } from '@/utils/useFormAction';
 import { CirclePlus } from 'lucide-react';
 
 export default function AddEditProductModal({
@@ -21,26 +26,17 @@ export default function AddEditProductModal({
   data?: productData;
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const initState = { message: null };
-  const formAction = (prevState: any, formData: FormData) => {
+  const initState = null;
+  const formAction = (
+    prevState: ProductFormState,
+    formData: FormData,
+  ): Promise<ProductFormState> => {
     if (edit) {
-      formData.append('id', data!.id);
-      updateProduct(prevState, formData);
-    } else createProduct(prevState, formData);
+      formData.append('id', JSON.stringify(data!.id));
+      return updateProduct(prevState, formData);
+    } else return createProduct(prevState, formData);
   };
-  const [formState, submit, pending] = useActionState(formAction, initState);
-  let productName = '';
-  let commonName = '';
-  let manufacturer = '';
-  let imageLink = '';
-  let quantity = 0;
-  if (edit) {
-    productName = data!.name;
-    commonName = data!.commonName!;
-    manufacturer = data!.manufacturer;
-    imageLink = data!.imageLink!;
-    quantity = data!.quantity;
-  }
+  const [formState, submit, pending] = useFormAction(formAction, initState);
 
   return (
     <>
@@ -65,7 +61,7 @@ export default function AddEditProductModal({
                   <Input
                     isClearable
                     isRequired
-                    defaultValue={productName}
+                    defaultValue={edit ? data!.name : ''}
                     type='text'
                     name='name'
                     label='Product Name'
@@ -73,7 +69,7 @@ export default function AddEditProductModal({
                   />
                   <Input
                     isClearable
-                    defaultValue={commonName}
+                    defaultValue={edit ? data!.commonName : ''}
                     type='text'
                     name='commonName'
                     label='Common Name'
@@ -82,7 +78,7 @@ export default function AddEditProductModal({
                   <Input
                     isClearable
                     isRequired
-                    defaultValue={manufacturer}
+                    defaultValue={edit ? data!.manufacturedBy.name : ''}
                     type='text'
                     name='manufacturedBy'
                     label='Manufactured By'
@@ -90,14 +86,14 @@ export default function AddEditProductModal({
                   />
                   <Input
                     isClearable
-                    defaultValue={imageLink}
+                    defaultValue={data!.imageLink ? data!.imageLink : ''}
                     type='text'
                     name='imageLink'
                     label='Image Link'
                     className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
                   <NumberInput
-                    defaultValue={quantity}
+                    defaultValue={data!.quantity ? data!.quantity : 0}
                     type='number'
                     label='Quantity'
                     name='quantity'

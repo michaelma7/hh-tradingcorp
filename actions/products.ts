@@ -30,6 +30,22 @@ export interface productsForOrders {
   name: string;
 }
 
+export type ProductFormState = {
+  message?: string;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: {
+      id?: string[];
+      name?: string[];
+      commonName?: string[];
+      manufacturedBy?: string[];
+      imageLink?: string[];
+      quantity?: string[];
+      reserved?: string[];
+    };
+  };
+} | null;
+
 const productSchema = z.object({
   name: z.string().trim(),
   commonName: z.string().optional().or(z.literal('')),
@@ -43,16 +59,12 @@ const updateSchema = productSchema.extend({
   id: z.uuid(),
 });
 
-const inventorySchema = z.object({
-  productId: z.uuid(),
-  referenceId: z.uuid(),
-  quantity: z.number(),
-  transaction: z.enum(['received', 'ordered', 'return', 'sale']),
-});
-
-export async function createProduct(prevState: any, formData: FormData) {
+export async function createProduct(
+  prevState: ProductFormState,
+  formData: FormData,
+): Promise<ProductFormState> {
   try {
-    const data = productSchema.parse({
+    const data = productSchema.safeParse({
       name: formData.get('name'),
       commonName: formData.get('commonName'),
       manufacturedBy: formData.get('manufacturedBy'),
@@ -60,19 +72,20 @@ export async function createProduct(prevState: any, formData: FormData) {
       quantity: Number(formData.get('quantity')),
       reserved: Number(formData.get('reserved')),
     });
+    if (!data.success) return { errors: z.flattenError(data.error) };
     const [manufacturer] = await db
       .select({ id: manufacturers.id })
       .from(manufacturers)
-      .where(eq(manufacturers.name, `${data.manufacturedBy}`));
+      .where(eq(manufacturers.name, `${data.data.manufacturedBy}`));
     await db
       .insert(products)
       .values({
-        name: data.name,
-        commonName: data.commonName,
+        name: data.data.name,
+        commonName: data.data.commonName,
         manufacturedBy: manufacturer.id,
-        imageLink: data.imageLink,
-        quantity: data.quantity,
-        reserved: data.reserved,
+        imageLink: data.data.imageLink,
+        quantity: data.data.quantity,
+        reserved: data.data.reserved,
       })
       .onConflictDoNothing()
       .returning({ newId: products.id });
@@ -84,9 +97,12 @@ export async function createProduct(prevState: any, formData: FormData) {
   redirect('/dashboard');
 }
 
-export async function updateProduct(prevState: any, formData: FormData) {
+export async function updateProduct(
+  prevState: ProductFormState,
+  formData: FormData,
+): Promise<ProductFormState> {
   try {
-    const data = updateSchema.parse({
+    const data = updateSchema.safeParse({
       id: formData.get('id'),
       name: formData.get('name'),
       commonName: formData.get('commonName'),
@@ -95,21 +111,22 @@ export async function updateProduct(prevState: any, formData: FormData) {
       quantity: Number(formData.get('quantity')),
       reserved: Number(formData.get('reserved')),
     });
+    if (!data.success) return { errors: z.flattenError(data.error) };
     const [manufacturer] = await db
       .select({ id: manufacturers.id })
       .from(manufacturers)
-      .where(eq(manufacturers.name, `${data.manufacturedBy}`));
+      .where(eq(manufacturers.name, `${data.data.manufacturedBy}`));
     await db
       .update(products)
       .set({
-        name: data.name,
-        commonName: data.commonName,
+        name: data.data.name,
+        commonName: data.data.commonName,
         manufacturedBy: manufacturer.id,
-        imageLink: data.imageLink,
-        quantity: data.quantity,
-        reserved: data.reserved,
+        imageLink: data.data.imageLink,
+        quantity: data.data.quantity,
+        reserved: data.data.reserved,
       })
-      .where(eq(products.id, `${data.id}`));
+      .where(eq(products.id, `${data.data.id}`));
   } catch (err) {
     if (err instanceof z.ZodError) throw console.error(`${err.issues}`);
     console.error(`Update Error ${err}`);
@@ -118,7 +135,7 @@ export async function updateProduct(prevState: any, formData: FormData) {
   redirect('/dashboard');
 }
 
-export async function deleteProduct(productId: string) {
+export async function deleteProduct(productId: string): Promise<void> {
   try {
     await db.delete(products).where(eq(products.id, `${productId}`));
   } catch (err) {
