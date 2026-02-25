@@ -30,10 +30,27 @@ export type orderItemData = {
   price?: number;
 };
 
-export type orderItemChanges = {
-  addOrUpdate: orderItemData[];
-  remove: orderItemData[];
-};
+export type OrderFormState = {
+  message?: string | null;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: {
+      name?: string[];
+      createdBy?: string[];
+      customer?: string[];
+      totalCents?: string[];
+      status?: string[];
+    };
+  };
+} | null;
+
+export type OrderItemFormState = {
+  message?: string | null;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: (string[] | undefined)[];
+  };
+} | null;
 
 const orderItemSchema = z.object({
   orderId: z.uuid(),
@@ -56,31 +73,35 @@ const updateSchema = orderSchema.extend({
   id: z.uuid(),
 });
 
-export async function createOrder(prevState: any, formData: FormData) {
+export async function createOrder(
+  prevState: OrderFormState | OrderItemFormState,
+  formData: FormData,
+): Promise<OrderFormState | OrderItemFormState> {
   try {
     const data = {
       name: formData.get('name'),
       createdBy: formData.get('createdBy'),
       customer: formData.get('customer'),
       totalCents: Number(formData.get('totalCents')),
-      status: JSON.parse(formData.get('status') as string),
+      status: formData.get('status') as string,
     };
-    const order = orderSchema.parse(data);
+    const order = orderSchema.safeParse(data);
+    if (!order.success) return { errors: z.flattenError(order.error) };
     await db.transaction(async (tx) => {
       const [user] = await tx
         .select({ userId: users.id })
         .from(users)
-        .where(eq(users.email, `${order.createdBy}`));
+        .where(eq(users.email, `${order.data.createdBy}`));
       const [customer] = await tx
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.name, `${order.customer}`));
+        .where(eq(customers.name, `${order.data.customer}`));
       const newOrder: typeof orders.$inferInsert = {
-        name: order.name,
+        name: order.data.name,
         createdById: user.userId,
         customerId: customer.id,
-        status: order.status,
-        totalCents: order.totalCents,
+        status: order.data.status,
+        totalCents: order.data.totalCents,
       };
 
       const [newId] = await tx
@@ -108,10 +129,14 @@ export async function createOrder(prevState: any, formData: FormData) {
             priceCents: Number(itemData.price[i]) * 100,
           });
         }
-        const verifiedItems = orderItemsSchema.parse(items);
-
-        await tx.insert(orderItems).values(verifiedItems).onConflictDoNothing();
-        for (const item of verifiedItems) {
+        const verifiedItems = orderItemsSchema.safeParse(items);
+        if (!verifiedItems.success)
+          return { errors: z.flattenError(verifiedItems.error) };
+        await tx
+          .insert(orderItems)
+          .values(verifiedItems.data)
+          .onConflictDoNothing();
+        for (const item of verifiedItems.data) {
           const change: inventoryTransaction = {
             productId: item.productId,
             transaction: newOrder.status ? 'sale' : 'ordered',
@@ -143,10 +168,13 @@ export async function createOrder(prevState: any, formData: FormData) {
     console.error(`Order insertion error: ${err}`);
     throw err;
   }
-  redirect('/dashboard');
+  redirect('/dashboard/orders');
 }
 
-export async function updateOrder(prevState: any, formData: FormData) {
+export async function updateOrder(
+  prevState: OrderFormState | OrderItemFormState,
+  formData: FormData,
+): Promise<OrderFormState> {
   try {
     const data = {
       id: formData.get('id'),
@@ -154,22 +182,23 @@ export async function updateOrder(prevState: any, formData: FormData) {
       createdBy: formData.get('createdBy'),
       customer: formData.get('customer'),
       totalCents: Number(formData.get('totalCents')),
-      status: JSON.parse(formData.get('status') as string),
+      status: formData.get('status') as string,
     };
-    const order = updateSchema.parse(data);
+    const order = updateSchema.safeParse(data);
+    if (!order.success) return { errors: z.flattenError(order.error) };
 
     await db.transaction(async (tx) => {
       const [customerId] = await tx
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.name, `${order.customer}`));
+        .where(eq(customers.name, `${order.data.customer}`));
       const updatedOrder: typeof orders.$inferInsert = {
-        id: order.id,
-        name: order.name,
-        createdById: order.createdBy,
+        id: order.data.id,
+        name: order.data.name,
+        createdById: order.data.createdBy,
         customerId: customerId.id,
-        status: order.status,
-        totalCents: order.totalCents,
+        status: order.data.status,
+        totalCents: order.data.totalCents,
       };
       await tx
         .update(orders)
@@ -179,11 +208,11 @@ export async function updateOrder(prevState: any, formData: FormData) {
         const items = await tx
           .select()
           .from(orderItems)
-          .where(eq(orderItems.orderId, `${order.id}`));
+          .where(eq(orderItems.orderId, `${order.data.id}`));
         await tx
           .update(inventoryTransactions)
           .set({ transaction: 'sale' })
-          .where(eq(inventoryTransactions.referenceId, `${order.id}`));
+          .where(eq(inventoryTransactions.referenceId, `${order.data.id}`));
         for (const item of items) {
           const deliveredItem: inventoryTransaction = {
             productId: item.productId,
@@ -206,10 +235,13 @@ export async function updateOrder(prevState: any, formData: FormData) {
     console.error(`Order update Error ${err}`);
     throw err;
   }
-  redirect('/dashboard');
+  redirect('/dashboard/orders');
 }
 
-export async function modifyOrderItems(prevState: any, formData: FormData) {
+export async function modifyOrderItems(
+  prevState: OrderItemFormState | OrderFormState,
+  formData: FormData,
+): Promise<OrderItemFormState> {
   try {
     // order line item data
     const itemData = {
@@ -234,7 +266,7 @@ export async function modifyOrderItems(prevState: any, formData: FormData) {
           );
         }
       });
-      return;
+      return { message: 'Items Deleted' };
     } else {
       // create array of items to upsert & delete
       const items = [];
@@ -246,8 +278,10 @@ export async function modifyOrderItems(prevState: any, formData: FormData) {
           priceCents: Number(itemData.price[i]) * 100,
         });
       }
-      const verifiedItems = orderItemsSchema.parse(items);
-      return await db.transaction(async (tx) => {
+      const verifiedItems = orderItemsSchema.safeParse(items);
+      if (!verifiedItems.success)
+        return { errors: z.flattenError(verifiedItems.error) };
+      await db.transaction(async (tx) => {
         // get current list of items and find rows removed
         const currentItems = await tx
           .select()
@@ -261,7 +295,7 @@ export async function modifyOrderItems(prevState: any, formData: FormData) {
           }
         }
         // upsert all other items
-        verifiedItems.forEach(async (item) => {
+        verifiedItems.data.forEach(async (item) => {
           await tx
             .insert(orderItems)
             .values(item)
@@ -271,6 +305,7 @@ export async function modifyOrderItems(prevState: any, formData: FormData) {
             });
         });
       });
+      return { message: 'Order Items successfully changed' };
     }
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
@@ -290,7 +325,7 @@ export async function deleteOrder(orderId: string) {
     console.error(`Order delete Error ${err}`);
     throw err;
   }
-  redirect('/dashboard');
+  redirect('/dashboard/orders');
 }
 
 export const getOrdersForDashboard = unstable_cache(
