@@ -1,4 +1,8 @@
-import { getOneManufacturer, deleteManfacturer } from '@/actions/manufacturers';
+import {
+  getOneManufacturer,
+  deleteManfacturer,
+  manufacturerData,
+} from '@/actions/manufacturers';
 import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
 import DeleteForm from '@/components/DeleteForm';
 import { redirect } from 'next/navigation';
@@ -9,7 +13,8 @@ export default async function ManufacturerPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [manufacturer] = await getOneManufacturer(id);
+  const manufacturer: manufacturerData | undefined =
+    await getOneManufacturer(id);
   if (!manufacturer) redirect('/dashboard/manufacturers');
   return (
     <div>

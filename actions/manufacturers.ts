@@ -12,6 +12,18 @@ export interface manufacturerData {
   contact: string | null;
 }
 
+export type ManufacturerFormState = {
+  message?: string | null;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: {
+      name?: string[];
+      contact?: string[];
+      id?: string[];
+    };
+  };
+} | null;
+
 const manufacturerSchema = z.object({
   name: z.string().trim(),
   contact: z.string().trim(),
@@ -21,21 +33,21 @@ const updateSchema = manufacturerSchema.extend({
   id: z.uuid(),
 });
 
-export async function createManfacturer(prevState: any, data: FormData) {
+export async function createManfacturer(
+  prevState: ManufacturerFormState,
+  data: FormData,
+): Promise<ManufacturerFormState> {
   try {
-    const newManu = manufacturerSchema.parse({
+    const newManu = manufacturerSchema.safeParse({
       name: data.get('name'),
       contact: data.get('contact'),
     });
-    if (newManu.name === null) {
-      console.error('Data type not supported');
-      throw new Error();
-    }
+    if (!newManu.success) return { errors: z.flattenError(newManu.error) };
     await db
       .insert(manufacturers)
       .values({
-        name: newManu.name,
-        contact: newManu.contact,
+        name: newManu.data.name,
+        contact: newManu.data.contact,
       })
       .onConflictDoNothing();
   } catch (err) {
@@ -43,32 +55,36 @@ export async function createManfacturer(prevState: any, data: FormData) {
     console.error(`Insertion error: ${err}`);
     throw err;
   }
-  redirect('/dashbaord');
+  redirect('/dashbaord/manufacturers');
 }
 
-export async function updateManfacturer(prevState: any, data: FormData) {
-  const update = updateSchema.parse({
-    id: data.get('id'),
-    name: data.get('name'),
-    contact: data.get('contact'),
-  });
+export async function updateManfacturer(
+  prevState: ManufacturerFormState,
+  data: FormData,
+): Promise<ManufacturerFormState> {
   try {
+    const update = updateSchema.safeParse({
+      id: data.get('id'),
+      name: data.get('name'),
+      contact: data.get('contact'),
+    });
+    if (!update.success) return { errors: z.flattenError(update.error) };
     await db
       .update(manufacturers)
       .set({
-        name: update.name,
-        contact: update.contact,
+        name: update.data.name,
+        contact: update.data.contact,
       })
-      .where(eq(manufacturers.id, `${update.id}`));
+      .where(eq(manufacturers.id, `${update.data.id}`));
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);
     console.error(`Update Error ${err}`);
     throw err;
   }
-  redirect('/dashboard');
+  redirect('/dashboard/manufacturers');
 }
 
-export async function deleteManfacturer(manufacturerId: number) {
+export async function deleteManfacturer(manufacturerId: number): Promise<void> {
   try {
     await db
       .delete(manufacturers)
@@ -76,7 +92,7 @@ export async function deleteManfacturer(manufacturerId: number) {
   } catch (err) {
     console.error(`Delete Error ${err}`);
   }
-  redirect('/dashboard');
+  redirect('/dashboard/manufacturers');
 }
 
 export const getManfacturersForDashboard = unstable_cache(
@@ -96,10 +112,9 @@ export const getManfacturersForDashboard = unstable_cache(
 
 export async function getOneManufacturer(manufacturerId: string) {
   try {
-    return await db
-      .select()
-      .from(manufacturers)
-      .where(eq(manufacturers.id, `${manufacturerId}`));
+    return await db.query.manufacturers.findFirst({
+      where: eq(manufacturers.id, `${manufacturerId}`),
+    });
   } catch (err) {
     console.error(`Manufacturer data fetch error ${err}`);
     throw err;

@@ -13,8 +13,9 @@ import {
   createManfacturer,
   updateManfacturer,
   manufacturerData,
+  ManufacturerFormState,
 } from '@/actions/manufacturers';
-import { useActionState } from 'react';
+import { useFormAction } from '@/utils/useFormAction';
 import { CirclePlus } from 'lucide-react';
 
 export default function AddEditManufacturerModal({
@@ -26,19 +27,15 @@ export default function AddEditManufacturerModal({
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const formAction = (prevState: any, formData: FormData) => {
+  const formAction = (prevState: ManufacturerFormState, formData: FormData) => {
     if (edit) {
-      formData.append('id', data!.id);
-      updateManfacturer(prevState, formData);
-    } else createManfacturer(prevState, formData);
+      formData.append('id', data!.id as string);
+      return updateManfacturer(prevState, formData);
+    } else return createManfacturer(prevState, formData);
   };
-  const [formState, submit, pending] = useActionState(formAction, initState);
-  let manufacturerName = '';
-  let contact = '';
-  if (edit) {
-    manufacturerName = data!.name;
-    contact = data!.contact;
-  }
+  const [formState, submit, pending] = useFormAction(formAction, initState);
+  const manufacturerName = data!.name ? data!.name : '';
+  const contact = data!.contact ? data!.contact : '';
 
   return (
     <>
