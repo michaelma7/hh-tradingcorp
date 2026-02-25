@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useProvider } from '@/app/CurrentUserProvider';
 
 export default function Nav() {
-  const { currentUser } = useProvider();
+  const currentUser = useProvider()?.currentUser;
   return (
     <nav className='h-[65px] border-b border-default-50 flex items-center px-6 gap-4'>
       <div>

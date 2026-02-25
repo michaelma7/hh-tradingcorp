@@ -3,10 +3,17 @@ import Sidebar from './Sidebar';
 import Nav from './Nav';
 import { useProvider } from '@/app/CurrentUserProvider';
 import { useEffect } from 'react';
+import { userData } from '@/actions/users';
 
-export default function Shell({ children, data }) {
-  const { changeUser } = useProvider();
-  useEffect(() => changeUser(data.email), []);
+export default function Shell({
+  children,
+  data,
+}: {
+  children: any;
+  data: userData | undefined;
+}) {
+  const changeUser = useProvider()!.changeUser;
+  useEffect(() => changeUser(data!.email), []);
   return (
     <div className='flex w-screen h-screen'>
       <aside className='w-[200px] min-w-[200px] max-w-[200px] h-full border-r border-default-50'>
