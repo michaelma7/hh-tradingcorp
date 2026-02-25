@@ -19,11 +19,14 @@ import {
   updateOrder,
   orderData,
   orderItemData,
+  OrderItemFormState,
+  OrderFormState,
 } from '@/actions/orders';
 import { productsForOrders } from '@/actions/products';
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
 import Submit from './Submit';
+import { useFormAction } from '@/utils/useFormAction';
 import { useProvider } from '@/app/CurrentUserProvider';
 
 export default function AddEditOrderModal({
@@ -37,28 +40,31 @@ export default function AddEditOrderModal({
   orderData?: orderData;
   lineItems?: orderItemData[];
 }) {
-  const { currentUser } = useProvider();
+  const currentUser = useProvider()?.currentUser;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [deliveryStatus, setDeliveryStatus] = useState(
-    edit ? orderData!.status : false
+    edit ? orderData!.status : false,
   );
   const initState = { message: null };
-  const formAction = async (prevState: any, formData: FormData) => {
+  const formAction = (
+    prevState: OrderFormState | OrderItemFormState,
+    formData: FormData,
+  ): Promise<OrderFormState | OrderItemFormState> => {
     if (edit) {
       for (const item of items) formData.append('productId', item.productId);
       formData.append('id', orderData!.id);
       formData.append('totalCents', JSON.stringify(total * 100));
       formData.set('status', JSON.stringify(deliveryStatus));
-      await modifyOrderItems(prevState, formData);
-      await updateOrder(prevState, formData);
+      modifyOrderItems(prevState, formData);
+      return updateOrder(prevState, formData);
     } else {
       for (const item of items) formData.append('productId', item.productId);
       formData.append('totalCents', JSON.stringify(total * 100));
       formData.set('status', JSON.stringify(deliveryStatus));
-      await createOrder(prevState, formData);
+      return createOrder(prevState, formData);
     }
   };
-  const [formState, submit, pending] = useActionState(formAction, initState);
+  const [formState, submit, pending] = useFormAction(formAction, initState);
   const initItems = lineItems
     ? lineItems
     : [
@@ -92,15 +98,17 @@ export default function AddEditOrderModal({
   const updateItem = (
     id: string,
     field: string,
-    value: string | number | React.Key
+    value: string | number | React.Key,
   ) => {
     setItems(
-      items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      items.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
     );
   };
   const total = items.reduce(
     (acc, curr) => acc + curr.quantity! * curr.price!,
-    0
+    0,
   );
 
   return (
@@ -121,7 +129,7 @@ export default function AddEditOrderModal({
           Create New Order <CirclePlus size={16} />
         </Button>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className='bg-white'>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className=''>
         <ModalContent>
           {(onClose) => (
             <>
@@ -193,10 +201,7 @@ export default function AddEditOrderModal({
                         className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                       >
                         {(product) => (
-                          <AutocompleteItem
-                            className='bg-white'
-                            key={product.key}
-                          >
+                          <AutocompleteItem className='' key={product.key}>
                             {product.name}
                           </AutocompleteItem>
                         )}
