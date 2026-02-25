@@ -13,12 +13,12 @@ export default async function OrderPage({
   const order = await getOneOrder(id);
   const products = await getProductsforOrders();
   const lineItems: orderItemData[] = [];
+  if (!order) redirect('/dashboard/orders');
   if (order!.ordersToOrderItems) {
     order!.ordersToOrderItems.forEach((item) => {
       lineItems.push({
         id: item.id,
-        product: item.product.name,
-        productId: item.product.id,
+        productId: item.product.name,
         quantity: item.quantity ? item.quantity : 0,
         price: item.priceCents ? item.priceCents / 100 : 0,
       });
@@ -32,11 +32,22 @@ export default async function OrderPage({
     totalCents: order!.totalCents,
     status: order!.status,
   };
-  if (!order) redirect('/dashboard/orders');
+
   return (
     <div>
       <h2>{order.name}</h2>
-      <h3>{order.customerId}</h3>
+      <h3>{order.customers.name}</h3>
+      {lineItems ? (
+        lineItems.map((item) => (
+          <div key={item.id}>
+            <p>Product: {item.productId}</p>
+            <p>Qty: {item.quantity}</p>
+            <p>${item.price}</p>
+          </div>
+        ))
+      ) : (
+        <div>No Items</div>
+      )}
       <div>
         <AddEditOrderModal
           productData={products}
