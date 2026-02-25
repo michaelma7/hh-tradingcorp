@@ -9,11 +9,11 @@ import { redirect } from 'next/navigation';
 export interface customersData {
   id: string;
   name: string;
-  location: string;
+  location: string | null;
 }
 
 export type CustomerFormState = {
-  message?: string | null;
+  message?: string;
   errors?: {
     formErrors: string[];
     fieldErrors: {
@@ -108,10 +108,12 @@ export const getCustomersForDashboard = unstable_cache(
 
 export async function getOneCustomer(customerId: string) {
   try {
-    return await db
-      .select()
-      .from(customers)
-      .where(eq(customers.id, `${customerId}`));
+    return await db.query.customers.findFirst({
+      where: eq(customers.id, `${customerId}`),
+      columns: {
+        createdAt: false,
+      },
+    });
   } catch (err) {
     console.error(`Customer data fetch error ${err}`);
     throw err;

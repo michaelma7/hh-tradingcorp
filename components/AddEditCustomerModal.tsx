@@ -26,20 +26,16 @@ export default function AddEditCustomerModal({
   data?: customersData;
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const initState = { message: null };
+  const initState = null;
   const formAction = (prevState: CustomerFormState, formData: FormData) => {
     if (edit) {
-      formData.append('id', JSON.stringify(data!.id));
+      formData.append('id', data!.id as string);
       return updateCustomer(prevState, formData);
     } else return createCustomer(prevState, formData);
   };
   const [formState, submit, pending] = useFormAction(formAction, initState);
-  let customerName = '';
-  let location = '';
-  if (edit) {
-    customerName = data!.name;
-    location = data!.location;
-  }
+  const customerName = data!.name ? data!.name : '';
+  const location = data!.location ? data!.location : '';
 
   return (
     <>
