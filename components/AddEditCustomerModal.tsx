@@ -15,8 +15,8 @@ import {
   customersData,
   CustomerFormState,
 } from '@/actions/customers';
-import { useFormAction } from '@/utils/useFormAction';
 import { CirclePlus } from 'lucide-react';
+import { useActionState } from 'react';
 
 export default function AddEditCustomerModal({
   edit,
@@ -33,7 +33,7 @@ export default function AddEditCustomerModal({
       return updateCustomer(prevState, formData);
     } else return createCustomer(prevState, formData);
   };
-  const [formState, submit, pending] = useFormAction(formAction, initState);
+  const [formState, submit, pending] = useActionState(formAction, initState);
   const customerName = data!.name ? data!.name : '';
   const location = data!.location ? data!.location : '';
 

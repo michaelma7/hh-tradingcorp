@@ -15,7 +15,7 @@ import {
   manufacturerData,
   ManufacturerFormState,
 } from '@/actions/manufacturers';
-import { useFormAction } from '@/utils/useFormAction';
+import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
 export default function AddEditManufacturerModal({
@@ -33,7 +33,7 @@ export default function AddEditManufacturerModal({
       return updateManfacturer(prevState, formData);
     } else return createManfacturer(prevState, formData);
   };
-  const [formState, submit, pending] = useFormAction(formAction, initState);
+  const [formState, submit, pending] = useActionState(formAction, initState);
   const manufacturerName = data!.name ? data!.name : '';
   const contact = data!.contact ? data!.contact : '';
 

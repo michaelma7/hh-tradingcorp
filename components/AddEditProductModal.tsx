@@ -15,7 +15,7 @@ import {
   productData,
   ProductFormState,
 } from '@/actions/products';
-import { useFormAction } from '@/utils/useFormAction';
+import { useActionState } from 'react';
 import { CirclePlus } from 'lucide-react';
 
 export default function AddEditProductModal({
@@ -36,7 +36,7 @@ export default function AddEditProductModal({
       return updateProduct(prevState, formData);
     } else return createProduct(prevState, formData);
   };
-  const [formState, submit, pending] = useFormAction(formAction, initState);
+  const [formState, submit, pending] = useActionState(formAction, initState);
 
   return (
     <>

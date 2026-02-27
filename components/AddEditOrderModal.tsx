@@ -23,10 +23,9 @@ import {
   OrderFormState,
 } from '@/actions/orders';
 import { productsForOrders } from '@/actions/products';
-import { useState } from 'react';
+import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
 import Submit from './Submit';
-import { useFormAction } from '@/utils/useFormAction';
 import { useProvider } from '@/app/CurrentUserProvider';
 
 export default function AddEditOrderModal({
@@ -64,7 +63,7 @@ export default function AddEditOrderModal({
       return createOrder(prevState, formData);
     }
   };
-  const [formState, submit, pending] = useFormAction(formAction, initState);
+  const [formState, submit, pending] = useActionState(formAction, initState);
   const initItems = lineItems
     ? lineItems
     : [
@@ -152,7 +151,7 @@ export default function AddEditOrderModal({
                     type='text'
                     name='customer'
                     label='Customer'
-                    defaultValue={edit ? orderData!.customer : ''}
+                    defaultValue={edit ? orderData!.customer.name : ''}
                     isRequired
                   />
                   <Checkbox
@@ -260,11 +259,10 @@ export default function AddEditOrderModal({
                       <span id='total'>${total.toFixed(2)}</span>
                     </div>
                   </div>
-                  <Submit
-                    label={'Submit'}
-                    onPress={onClose}
-                    disabled={pending}
-                  />
+                  <Submit label={'Submit'} disabled={pending} />
+                  <Button color='danger' variant='light' onPress={onClose}>
+                    Cancel
+                  </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
               </ModalBody>
