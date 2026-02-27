@@ -1,17 +1,17 @@
 'use client';
 import { useState, useActionState } from 'react';
-import { signInUser } from '@/actions/auth';
-import Link from 'next/link';
+import { signInUser, UserFormState } from '@/actions/auth';
 import { Input } from '@heroui/react';
 import Submit from './Submit';
 import { EyeFilledIcon } from '@/public/eyeFilled';
 import { EyeSlashFilledIcon } from '@/public/eyeSlashFilled';
 
 export default function SigninForm() {
-  const initState = { message: null };
-  const [formState, submit, isPending] = useActionState<{
-    message: string | null;
-  }>(signInUser, initState);
+  const initState: UserFormState = null;
+  const [formState, submit, isPending] = useActionState<
+    UserFormState,
+    FormData
+  >(signInUser, initState);
 
   const [isVisible, setIsVisible] = useState(false);
   const toggleVisibility = () => setIsVisible(!isVisible);
@@ -53,11 +53,8 @@ export default function SigninForm() {
           </button>
         }
       />
-      <Submit label={'Sign In'} />
-      {/* <div>
-        <Link href='/signup'>{`Don't have an account?`}</Link>
-      </div> */}
-      {isPending ? 'Loading' : formState.message}
+      <Submit label={'Sign In'} disabled={isPending} />
+      {isPending ? 'Loading' : ''}
       {formState?.message && <p>{formState.message}</p>}
     </form>
   );
