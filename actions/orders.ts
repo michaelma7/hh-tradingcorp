@@ -18,7 +18,7 @@ export interface orderData {
   id: string;
   name: string;
   createdBy: string;
-  customer: string;
+  customer: { id: string; name: string };
   totalCents: number;
   status: boolean;
 }
