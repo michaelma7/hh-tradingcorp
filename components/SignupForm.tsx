@@ -4,24 +4,14 @@ import Link from 'next/link';
 import { registerUser } from '@/actions/auth';
 import { Input } from '@heroui/react';
 import Submit from './Submit';
-
-export type userFormState =
-  | {
-      errors?: {
-        email?: string[];
-        password?: string[];
-        confirmPassword?: string[];
-      };
-      message?: string;
-    }
-  | undefined;
+import { UserFormState } from '@/actions/auth';
 
 export default function SignupForm() {
   const initState = { message: null };
-  const [formState, submit, isPending] = useActionState<userFormState>(
-    registerUser,
-    initState
-  );
+  const [formState, submit, isPending] = useActionState<
+    UserFormState,
+    FormData
+  >(registerUser, initState);
 
   return (
     <form
