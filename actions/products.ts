@@ -150,7 +150,15 @@ export const getProductsForDashboard = unstable_cache(
     const data = await db.query.products.findMany({
       orderBy: [asc(products.lastUpdated)],
       limit: 25,
-      columns: { lastUpdated: false },
+      with: {
+        manufacturedBy: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      columns: { lastUpdated: false, commonName: false },
     });
     return data ?? [];
   },
