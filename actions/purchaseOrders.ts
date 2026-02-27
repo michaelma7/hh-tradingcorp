@@ -31,6 +31,25 @@ export type purchaseOrderItemChanges = {
   remove: purchaseOrderItem[];
 };
 
+export type PurchaseOrderFormState = {
+  message?: string;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: {
+      orderDate?: string[];
+      status?: string[];
+    };
+  };
+} | null;
+
+export type PurchaseOrderItemFormState = {
+  message?: string | null;
+  errors?: {
+    formErrors: string[];
+    fieldErrors: (string[] | undefined)[];
+  };
+} | null;
+
 const purchaseOrderItemSchema = z.object({
   purchaseOrderId: z.uuid(),
   productId: z.uuid(),
@@ -50,17 +69,22 @@ const updateSchema = purchaseOrderSchema.extend({
   id: z.uuid(),
 });
 
-export async function createPurchaseOrder(prevState: any, formData: FormData) {
+export async function createPurchaseOrder(
+  prevState: PurchaseOrderFormState | PurchaseOrderItemFormState,
+  formData: FormData,
+): Promise<PurchaseOrderFormState | PurchaseOrderItemFormState> {
   try {
     const inputs = {
       orderDate: formData.get('orderDate'),
       status: formData.get('status'),
     };
-    const purchaseOrder = purchaseOrderSchema.parse(inputs);
+    const purchaseOrder = purchaseOrderSchema.safeParse(inputs);
+    if (!purchaseOrder.success)
+      return { errors: z.flattenError(purchaseOrder.error) };
     await db.transaction(async (tx) => {
       const newPurchaseOrder: typeof purchaseOrders.$inferInsert = {
-        orderDate: purchaseOrder.orderDate,
-        status: purchaseOrder.status,
+        orderDate: purchaseOrder.data.orderDate,
+        status: purchaseOrder.data.status,
       };
 
       const [newId] = await tx
@@ -88,15 +112,16 @@ export async function createPurchaseOrder(prevState: any, formData: FormData) {
           expirationDate: items.expirationDate[i],
         });
       }
-      const verifiedItems = itemsSchema.parse(itemsWithId);
-
+      const verifiedItems = itemsSchema.safeParse(itemsWithId);
+      if (!verifiedItems.success)
+        return { errors: z.flattenError(verifiedItems.error) };
       await tx
         .insert(purchaseOrderItems)
-        .values(verifiedItems)
+        .values(verifiedItems.data)
         .onConflictDoNothing();
 
-      if (purchaseOrder.status === 'received') {
-        for (const item of verifiedItems) {
+      if (purchaseOrder.data.status === 'received') {
+        for (const item of verifiedItems.data) {
           const change: inventoryTransaction = {
             productId: item.productId,
             transaction: 'received',
@@ -122,7 +147,10 @@ export async function createPurchaseOrder(prevState: any, formData: FormData) {
   redirect('/dashboard');
 }
 
-export async function updatePurchaseOrder(prevState: any, formData: FormData) {
+export async function updatePurchaseOrder(
+  prevState: PurchaseOrderFormState | PurchaseOrderItemFormState,
+  formData: FormData,
+): Promise<PurchaseOrderFormState | PurchaseOrderItemFormState> {
   try {
     const inputs = {
       id: formData.get('id'),
@@ -130,25 +158,26 @@ export async function updatePurchaseOrder(prevState: any, formData: FormData) {
       status: formData.get('status'),
       expirationDate: formData.getAll('expirationDate'),
     };
-    const update = updateSchema.parse(inputs);
+    const update = updateSchema.safeParse(inputs);
+    if (!update.success) return { errors: z.flattenError(update.error) };
     await db.transaction(async (tx) => {
       tx.update(purchaseOrders)
         .set({
-          orderDate: update.orderDate,
-          status: update.status,
+          orderDate: update.data.orderDate,
+          status: update.data.status,
         })
-        .where(eq(purchaseOrders.id, `${update.id}`));
-      if (update.status === 'received') {
+        .where(eq(purchaseOrders.id, `${update.data.id}`));
+      if (update.data.status === 'received') {
         const items = await tx
           .select()
           .from(purchaseOrderItems)
-          .where(eq(purchaseOrderItems.purchaseOrderId, `${update.id}`));
+          .where(eq(purchaseOrderItems.purchaseOrderId, `${update.data.id}`));
         for (const item of items) {
           const receivedItem: inventoryTransaction = {
             productId: item.productId,
             transaction: 'received',
             quantity: item.quantity!,
-            referenceId: update.id,
+            referenceId: update.data.id,
           };
           await tx
             .update(products)
@@ -168,9 +197,9 @@ export async function updatePurchaseOrder(prevState: any, formData: FormData) {
 }
 
 export async function modifyPurchaseOrderItems(
-  prevState: any,
+  prevState: PurchaseOrderFormState | PurchaseOrderItemFormState,
   formData: FormData,
-) {
+): Promise<PurchaseOrderFormState | PurchaseOrderItemFormState> {
   try {
     // order line item data
     const itemData = {
@@ -196,7 +225,7 @@ export async function modifyPurchaseOrderItems(
           );
         }
       });
-      return;
+      return { message: 'Item Removal done' };
     } else {
       // create array of items to upsert & delete
       const items = [];
@@ -210,8 +239,10 @@ export async function modifyPurchaseOrderItems(
         });
       }
       console.log(items);
-      const verifiedItems = itemsSchema.parse(items);
-      return await db.transaction(async (tx) => {
+      const verifiedItems = itemsSchema.safeParse(items);
+      if (!verifiedItems.success)
+        return { errors: z.flattenError(verifiedItems.error) };
+      await db.transaction(async (tx) => {
         // get current list of items and find rows removed
         const currentItems = await tx
           .select()
@@ -225,7 +256,7 @@ export async function modifyPurchaseOrderItems(
           }
         }
         // upsert all other items
-        verifiedItems.forEach(async (item) => {
+        verifiedItems.data.forEach(async (item) => {
           await tx
             .insert(purchaseOrderItems)
             .values(item)
@@ -235,6 +266,7 @@ export async function modifyPurchaseOrderItems(
             });
         });
       });
+      return { message: 'Update finished' };
     }
   } catch (err) {
     if (err instanceof z.ZodError) console.error(`${err.issues}`);

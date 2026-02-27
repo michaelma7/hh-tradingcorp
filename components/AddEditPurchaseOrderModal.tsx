@@ -7,7 +7,6 @@ import {
   ModalFooter,
   useDisclosure,
   Button,
-  Input,
   DatePicker,
   NumberInput,
   RadioGroup,
@@ -22,11 +21,13 @@ import {
   modifyPurchaseOrderItems,
   purchaseOrderData,
   purchaseOrderItem,
+  PurchaseOrderItemFormState,
+  PurchaseOrderFormState,
 } from '@/actions/purchaseOrders';
 import { productsForOrders } from '@/actions/products';
-import { useActionState, useState } from 'react';
+import { useState, useActionState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
-import { parseDate } from '@internationalized/date';
+import { parseDate, DateValue } from '@internationalized/date';
 
 export default function AddEditPurchaseOrderModal({
   edit,
@@ -41,15 +42,18 @@ export default function AddEditPurchaseOrderModal({
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const formAction = (prevState: any, formData: FormData) => {
+  const formAction = (
+    prevState: PurchaseOrderItemFormState | PurchaseOrderFormState,
+    formData: FormData,
+  ): Promise<PurchaseOrderFormState | PurchaseOrderItemFormState> => {
     if (edit) {
       for (const item of items) formData.append('productId', item.productId);
       formData.append('id', orderData!.id);
       modifyPurchaseOrderItems(prevState, formData);
-      updatePurchaseOrder(prevState, formData);
+      return updatePurchaseOrder(prevState, formData);
     } else {
       for (const item of items) formData.append('productId', item.productId);
-      createPurchaseOrder(prevState, formData);
+      return createPurchaseOrder(prevState, formData);
     }
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
@@ -86,12 +90,14 @@ export default function AddEditPurchaseOrderModal({
   };
   const updateItem = (id: string, field: string, value: string | number) => {
     setItems(
-      items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      items.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
     );
   };
   const total = items.reduce(
     (acc, curr) => acc + curr.quantity * curr.price,
-    0
+    0,
   );
 
   return (
@@ -109,10 +115,10 @@ export default function AddEditPurchaseOrderModal({
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className='flex flex-col gap-1 bg-white'>
+              <ModalHeader className='flex flex-col gap-1'>
                 New Purchase Order
               </ModalHeader>
-              <ModalBody className='bg-white'>
+              <ModalBody>
                 <form action={submit}>
                   <DatePicker
                     label='Order Date'
@@ -146,7 +152,7 @@ export default function AddEditPurchaseOrderModal({
                         type='text'
                         label='Product'
                         labelPlacement='outside-left'
-                        name='productId'
+                        name='product'
                         items={productData}
                         value={item.productId}
                         defaultInputValue={item.productId}
@@ -157,10 +163,7 @@ export default function AddEditPurchaseOrderModal({
                         className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                       >
                         {(product) => (
-                          <AutocompleteItem
-                            className='bg-white'
-                            key={product.key}
-                          >
+                          <AutocompleteItem key={product.key}>
                             {product.name}
                           </AutocompleteItem>
                         )}
@@ -203,7 +206,7 @@ export default function AddEditPurchaseOrderModal({
                           updateItem(
                             item.id!,
                             'expirationDate',
-                            value!.toString()
+                            value!.toString(),
                           )
                         }
                       />
@@ -224,11 +227,10 @@ export default function AddEditPurchaseOrderModal({
                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
-                  <Submit
-                    label={'Submit'}
-                    disabled={pending}
-                    onPress={onClose}
-                  />
+                  <Submit label={'Submit'} disabled={pending} />
+                  <Button color='danger' variant='light' onPress={onClose}>
+                    Cancel
+                  </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
               </ModalBody>
