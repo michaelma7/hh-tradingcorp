@@ -1,5 +1,5 @@
 'use client';
-import { Button } from '@heroui/button';
+import { Button } from '@heroui/react';
 import { Tabs, Tab } from '@heroui/tabs';
 import {
   Table,
@@ -15,41 +15,47 @@ import AddEditProductModal from '@/components/AddEditProductModal';
 import AddEditCustomerModal from '@/components/AddEditCustomerModal';
 import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
 import Link from 'next/link';
+import { customersData } from '@/actions/customers';
+import { purchaseOrderData } from '@/actions/purchaseOrders';
+import { manufacturerData } from '@/actions/manufacturers';
+import { productData } from '@/actions/products';
+import { orderData } from '@/actions/orders';
 
 export default function DashboardTabs({ data }: { data: any }) {
-  const orderRows = data.orders.map((order) => {
+  const orderRows = data.orders.map((order: orderData) => {
     return (
       <TableRow key={order.id} className=''>
         <TableCell>{order.name}</TableCell>
-        <TableCell>{order.customers.name}</TableCell>
+        <TableCell>{order.customer.name}</TableCell>
         <TableCell>${order.totalCents / 100}</TableCell>
         <TableCell>{order.status}</TableCell>
       </TableRow>
     );
   });
 
-  const productRows = data.products.map((product) => {
+  const productRows = data.products.map((product: productData) => {
     return (
       <TableRow key={product.id} className=''>
         <TableCell>{product.name}</TableCell>
         <TableCell>{product.quantity}</TableCell>
-        <TableCell>{product.manufacturedBy}</TableCell>
-        <TableCell>{product.lastUpdated}</TableCell>
+        <TableCell>{product.manufacturedBy.name}</TableCell>
       </TableRow>
     );
   });
 
-  const purchaseOrderRows = data.purchaseOrders.map((purchaseOrder) => {
-    return (
-      <TableRow key={purchaseOrder.id} className=''>
-        <TableCell>{purchaseOrder.id}</TableCell>
-        <TableCell>{purchaseOrder.orderDate}</TableCell>
-        <TableCell>{purchaseOrder.status}</TableCell>
-      </TableRow>
-    );
-  });
+  const purchaseOrderRows = data.purchaseOrders.map(
+    (purchaseOrder: purchaseOrderData) => {
+      return (
+        <TableRow key={purchaseOrder.id} className=''>
+          <TableCell>{purchaseOrder.id}</TableCell>
+          <TableCell>{purchaseOrder.orderDate}</TableCell>
+          <TableCell>{purchaseOrder.status}</TableCell>
+        </TableRow>
+      );
+    },
+  );
 
-  const customerRows = data.customers.map((customer) => {
+  const customerRows = data.customers.map((customer: customersData) => {
     return (
       <TableRow key={customer.id} className=''>
         <TableCell>{customer.name}</TableCell>
@@ -58,14 +64,16 @@ export default function DashboardTabs({ data }: { data: any }) {
     );
   });
 
-  const manufacturerRows = data.manufacturers.map((manufacturer) => {
-    return (
-      <TableRow key={manufacturer.id} className=''>
-        <TableCell>{manufacturer.name}</TableCell>
-        <TableCell>{manufacturer.contact}</TableCell>
-      </TableRow>
-    );
-  });
+  const manufacturerRows = data.manufacturers.map(
+    (manufacturer: manufacturerData) => {
+      return (
+        <TableRow key={manufacturer.id} className=''>
+          <TableCell>{manufacturer.name}</TableCell>
+          <TableCell>{manufacturer.contact}</TableCell>
+        </TableRow>
+      );
+    },
+  );
   return (
     <Tabs aria-label='Options'>
       <Tab key='orders' title='Orders'>

@@ -3,11 +3,18 @@
 import { Button } from '@heroui/react';
 import { useFormStatus } from 'react-dom';
 
-const Submit = ({ label, ...btnProps }) => {
+const Submit = ({
+  label,
+  disabled,
+  ...btnProps
+}: {
+  label: string;
+  disabled?: boolean;
+}) => {
   const { pending } = useFormStatus();
 
   return (
-    <Button {...btnProps} type='submit' isLoading={pending}>
+    <Button {...btnProps} disabled={disabled} type='submit' isLoading={pending}>
       {label}
     </Button>
   );
