@@ -77,7 +77,7 @@ export const productRelations = relations(products, ({ many, one }) => ({
   purchaseOrderItems: many(purchaseOrderItems),
   transactions: many(inventoryTransactions),
   manufacturedBy: one(manufacturers, {
-    references: [manufacturers.name],
+    references: [manufacturers.id],
     fields: [products.manufacturedBy],
   }),
 }));
