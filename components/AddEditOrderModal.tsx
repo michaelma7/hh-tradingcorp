@@ -119,7 +119,7 @@ export default function AddEditOrderModal({
       ) : (
         <Button
           color='primary'
-          size='sm'
+          size='md'
           radius='md'
           disableAnimation
           onPress={onOpen}
@@ -128,7 +128,12 @@ export default function AddEditOrderModal({
           Create New Order <CirclePlus size={16} />
         </Button>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className=''>
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        size='3xl'
+        className=''
+      >
         <ModalContent>
           {(onClose) => (
             <>
@@ -151,7 +156,7 @@ export default function AddEditOrderModal({
                     type='text'
                     name='customer'
                     label='Customer'
-                    defaultValue={edit ? orderData!.customer.name : ''}
+                    defaultValue={edit ? orderData!.customers.name : ''}
                     isRequired
                   />
                   <Checkbox

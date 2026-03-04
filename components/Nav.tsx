@@ -8,15 +8,15 @@ export default function Nav() {
   const currentUser = useProvider()?.currentUser;
   return (
     <nav className='h-[65px] border-b border-default-50 flex items-center px-6 gap-4'>
-      <div>
+      <div className='flex gap-2'>
         <Button color='primary'>
-          <Link href='/dashboard'>Dashboard</Link>
+          <Link href='/dashboard'>仪表板</Link>
         </Button>
         <Button color='primary'>
-          <Link href='/dashboard/orders'>Orders</Link>
+          <Link href='/dashboard/orders'>订单</Link>
         </Button>
-        <Button color='warning' onPress={signout}>
-          Sign Out
+        <Button color='danger' onPress={signout}>
+          Sign Out 登出
         </Button>
       </div>
       <div className='w-1/2'>
