@@ -18,44 +18,50 @@ import Link from 'next/link';
 import { customersData } from '@/actions/customers';
 import { purchaseOrderData } from '@/actions/purchaseOrders';
 import { manufacturerData } from '@/actions/manufacturers';
-import { productData } from '@/actions/products';
+import { productData, productsForOrders } from '@/actions/products';
 import { orderData } from '@/actions/orders';
 
-export default function DashboardTabs({ data }: { data: any }) {
-  const orderRows = data.orders.map((order: orderData) => {
+interface DashboardData {
+  orders: orderData[];
+  customers: customersData[];
+  manufacturers: manufacturerData[];
+  products: productData[];
+  purchaseOrders: purchaseOrderData[];
+  productData: productsForOrders[];
+}
+export default function DashboardTabs({ data }: { data: DashboardData }) {
+  const orderRows = data.orders.map((order) => {
     return (
       <TableRow key={order.id} className=''>
         <TableCell>{order.name}</TableCell>
-        <TableCell>{order.customer.name}</TableCell>
+        <TableCell>{order.customers.name}</TableCell>
         <TableCell>${order.totalCents / 100}</TableCell>
         <TableCell>{order.status}</TableCell>
       </TableRow>
     );
   });
 
-  const productRows = data.products.map((product: productData) => {
+  const productRows = data.products.map((product) => {
     return (
       <TableRow key={product.id} className=''>
         <TableCell>{product.name}</TableCell>
         <TableCell>{product.quantity}</TableCell>
-        <TableCell>{product.manufacturedBy.name}</TableCell>
+        {/* <TableCell>{product.manufacturedBy.name}</TableCell> */}
       </TableRow>
     );
   });
 
-  const purchaseOrderRows = data.purchaseOrders.map(
-    (purchaseOrder: purchaseOrderData) => {
-      return (
-        <TableRow key={purchaseOrder.id} className=''>
-          <TableCell>{purchaseOrder.id}</TableCell>
-          <TableCell>{purchaseOrder.orderDate}</TableCell>
-          <TableCell>{purchaseOrder.status}</TableCell>
-        </TableRow>
-      );
-    },
-  );
+  const purchaseOrderRows = data.purchaseOrders.map((purchaseOrder) => {
+    return (
+      <TableRow key={purchaseOrder.id} className=''>
+        <TableCell>{purchaseOrder.id}</TableCell>
+        <TableCell>{purchaseOrder.orderDate}</TableCell>
+        <TableCell>{purchaseOrder.status}</TableCell>
+      </TableRow>
+    );
+  });
 
-  const customerRows = data.customers.map((customer: customersData) => {
+  const customerRows = data.customers.map((customer) => {
     return (
       <TableRow key={customer.id} className=''>
         <TableCell>{customer.name}</TableCell>
@@ -64,24 +70,24 @@ export default function DashboardTabs({ data }: { data: any }) {
     );
   });
 
-  const manufacturerRows = data.manufacturers.map(
-    (manufacturer: manufacturerData) => {
-      return (
-        <TableRow key={manufacturer.id} className=''>
-          <TableCell>{manufacturer.name}</TableCell>
-          <TableCell>{manufacturer.contact}</TableCell>
-        </TableRow>
-      );
-    },
-  );
+  const manufacturerRows = data.manufacturers.map((manufacturer) => {
+    return (
+      <TableRow key={manufacturer.id} className=''>
+        <TableCell>{manufacturer.name}</TableCell>
+        <TableCell>{manufacturer.contact}</TableCell>
+      </TableRow>
+    );
+  });
   return (
     <Tabs aria-label='Options'>
       <Tab key='orders' title='Orders'>
         <div>
-          <AddEditOrderModal productData={data.productData} edit={false} />
-          <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/orders'>View All Orders</Link>
-          </Button>
+          <div className='flex gap-2 align-middle p-2'>
+            <AddEditOrderModal productData={data.productData} edit={false} />
+            <Button color='primary' size='md' radius='md'>
+              <Link href='/dashboard/orders'>View All Orders</Link>
+            </Button>
+          </div>
           <Table aria-label='Orders Dashboard Table'>
             <TableHeader>
               <TableColumn>Order Name</TableColumn>
@@ -96,13 +102,17 @@ export default function DashboardTabs({ data }: { data: any }) {
         </div>
       </Tab>
       <Tab key='purchaseOrders' title='Purchase Orders'>
-        <AddEditPurchaseOrderModal
-          edit={false}
-          productData={data.productData}
-        />
-        <Button color='primary' size='md' radius='md'>
-          <Link href='/dashboard/purchaseOrders'>View All Purchase Orders</Link>
-        </Button>
+        <div className='flex gap-2 align-middle p-2'>
+          <AddEditPurchaseOrderModal
+            edit={false}
+            productData={data.productData}
+          />
+          <Button color='primary' size='md' radius='md'>
+            <Link href='/dashboard/purchaseOrders'>
+              View All Purchase Orders
+            </Link>
+          </Button>
+        </div>
         <Table aria-label='Purchase Orders Dashboard Table'>
           <TableHeader>
             <TableColumn>Id</TableColumn>
@@ -115,16 +125,18 @@ export default function DashboardTabs({ data }: { data: any }) {
         </Table>
       </Tab>
       <Tab key='products' title='Products'>
-        <AddEditProductModal edit={false} />
-        <Button color='primary' size='md' radius='md'>
-          <Link href='/dashboard/products'>View All Products</Link>
-        </Button>
+        <div className='flex gap-2 align-middle p-2'>
+          <AddEditProductModal edit={false} />
+          <Button color='primary' size='md' radius='md'>
+            <Link href='/dashboard/products'>View All Products</Link>
+          </Button>
+        </div>
+
         <Table aria-label='Products Dashboard Table'>
           <TableHeader>
             <TableColumn>Product</TableColumn>
             <TableColumn>Quantity</TableColumn>
-            <TableColumn>Manufactured By</TableColumn>
-            <TableColumn>Last Updated</TableColumn>
+            {/* <TableColumn>Manufactured By</TableColumn> */}
           </TableHeader>
           <TableBody emptyContent={'No rows to display'}>
             {productRows}
@@ -132,10 +144,13 @@ export default function DashboardTabs({ data }: { data: any }) {
         </Table>
       </Tab>
       <Tab key='customers' title='Customers'>
-        <AddEditCustomerModal edit={false} />
-        <Button color='primary' size='md' radius='md'>
-          <Link href='/dashboard/customers'>View All Customers</Link>
-        </Button>
+        <div className='flex gap-2 align-middle p-2'>
+          <AddEditCustomerModal edit={false} />
+          <Button color='primary' size='md' radius='md'>
+            <Link href='/dashboard/customers'>View All Customers</Link>
+          </Button>
+        </div>
+
         <Table aria-label='Customer Dashboard Table'>
           <TableHeader>
             <TableColumn>Customer Name</TableColumn>
@@ -147,10 +162,12 @@ export default function DashboardTabs({ data }: { data: any }) {
         </Table>
       </Tab>
       <Tab key='manufacturers' title='Manufacturers'>
-        <AddEditManufacturerModal edit={false} />
-        <Button color='primary' size='md' radius='md'>
-          <Link href='/dashboard/manufacturers'>View All Manufacturers</Link>
-        </Button>
+        <div className='flex gap-2 align-middle p-2'>
+          <AddEditManufacturerModal edit={false} />
+          <Button color='primary' size='md' radius='md'>
+            <Link href='/dashboard/manufacturers'>View All Manufacturers</Link>
+          </Button>
+        </div>
         <Table aria-label='Manufacturers Dashboard Table'>
           <TableHeader>
             <TableColumn>Manufacturer Name</TableColumn>
