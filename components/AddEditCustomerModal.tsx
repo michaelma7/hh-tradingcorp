@@ -34,8 +34,6 @@ export default function AddEditCustomerModal({
     } else return createCustomer(prevState, formData);
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
-  const customerName = data!.name ? data!.name : '';
-  const location = data!.location ? data!.location : '';
 
   return (
     <>
@@ -60,7 +58,7 @@ export default function AddEditCustomerModal({
                   <Input
                     isClearable
                     isRequired
-                    defaultValue={customerName}
+                    defaultValue={edit ? data!.name : ''}
                     type='text'
                     name='name'
                     label='Customer Name'
@@ -68,7 +66,7 @@ export default function AddEditCustomerModal({
                   />
                   <Input
                     isClearable
-                    defaultValue={location}
+                    defaultValue={data!.location ? data!.location : ''}
                     type='text'
                     name='location'
                     label='Location'

@@ -34,8 +34,6 @@ export default function AddEditManufacturerModal({
     } else return createManfacturer(prevState, formData);
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
-  const manufacturerName = data!.name ? data!.name : '';
-  const contact = data!.contact ? data!.contact : '';
 
   return (
     <>
@@ -60,7 +58,7 @@ export default function AddEditManufacturerModal({
                   <Input
                     isClearable
                     isRequired
-                    defaultValue={manufacturerName}
+                    defaultValue={edit ? data!.name : ''}
                     type='text'
                     name='name'
                     label='Manufacturer Name'
@@ -68,7 +66,7 @@ export default function AddEditManufacturerModal({
                   />
                   <Input
                     isClearable
-                    defaultValue={contact}
+                    defaultValue={data!.contact ? data!.contact : ''}
                     type='text'
                     name='contact'
                     label='Contact'
