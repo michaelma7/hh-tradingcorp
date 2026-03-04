@@ -2,7 +2,7 @@ import { getAllManufacturers } from '@/actions/manufacturers';
 import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
 import TableGenerator from '@/components/TableGenerator';
 
-export default async function Orders() {
+export default async function Manufacturers() {
   const manufacturers = await getAllManufacturers();
 
   return (

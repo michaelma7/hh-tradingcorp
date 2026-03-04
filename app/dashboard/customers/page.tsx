@@ -2,7 +2,7 @@ import { getAllCustomers } from '@/actions/customers';
 import AddEditCustomerModal from '@/components/AddEditCustomerModal';
 import TableGenerator from '@/components/TableGenerator';
 
-export default async function Orders() {
+export default async function Customers() {
   const customers = await getAllCustomers();
   return (
     <div>

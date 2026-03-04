@@ -1,3 +1,3 @@
-export default function OrdersLoader() {
+export default function AuthLoader() {
   return '...loading';
 }

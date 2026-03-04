@@ -2,7 +2,7 @@ import { getAllProducts } from '@/actions/products';
 import AddEditProductModal from '@/components/AddEditProductModal';
 import TableGenerator from '@/components/TableGenerator';
 
-export default async function Orders() {
+export default async function Products() {
   const products = await getAllProducts();
   return (
     <div>
