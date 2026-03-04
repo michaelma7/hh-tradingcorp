@@ -28,19 +28,22 @@ export async function decrypt(session: string | undefined = '') {
   }
 }
 
-export async function getUserFromToken() {
-  const session = (await cookies()).get('session')?.value;
-  const payload = await decrypt(session);
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, `${payload!.userId}`),
-    columns: {
-      id: true,
-      email: true,
-    },
-  });
+export async function getUserFromToken(token: string | undefined) {
+  try {
+    const payload = await decrypt(token);
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, `${payload!.userId}`),
+      columns: {
+        id: true,
+        email: true,
+      },
+    });
 
-  if (!user) return null;
-  return user;
+    if (!user) return null;
+    return user;
+  } catch (err) {
+    console.error('User not found', err);
+  }
 }
 
 export async function createSession(userId: string) {
