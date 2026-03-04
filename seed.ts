@@ -1,5 +1,5 @@
 import { db } from '@/db/db';
-import { users, products, manufacturers } from '@/db/schema';
+import { users, products, manufacturers, customers } from '@/db/schema';
 import bcrypt from 'bcrypt';
 
 const seedDb = async () => {
@@ -20,7 +20,7 @@ const seedDb = async () => {
         { name: 'dat', contact: 'wechatid:asdfasd' },
         { name: 'china', contact: 'guangzhou' },
       ])
-      .returning();
+      .returning({ id: manufacturers.id });
     console.log('inserted manufacturers', newManufacturers);
     const newProducts = await db
       .insert(products)
@@ -28,16 +28,30 @@ const seedDb = async () => {
         {
           name: 'fuhouan',
           commonName: 'stomach relief',
-          manufacturedBy: 'dat',
+          manufacturedBy: newManufacturers[1].id,
         },
         {
           name: 'yunanbaiyao',
           commonName: 'bloodstaunching',
-          manufacturedBy: 'china',
+          manufacturedBy: newManufacturers[0].id,
         },
       ])
       .returning();
     console.log('inserted products', newProducts);
+    const newCustomers = await db
+      .insert(customers)
+      .values([
+        {
+          name: 'michael',
+          location: 'lul',
+        },
+        {
+          name: 'yizhou',
+          location: 'mucho',
+        },
+      ])
+      .returning();
+    console.log('inserted customers', newCustomers);
   } catch (err) {
     console.error('failed db seeding', err);
   }
