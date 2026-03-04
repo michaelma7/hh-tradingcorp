@@ -28,7 +28,7 @@ export default async function OrderPage({
     id: id,
     name: order!.name,
     createdBy: order!.createdById,
-    customer: order!.customers,
+    customers: order!.customers,
     totalCents: order!.totalCents,
     status: order!.status,
   };

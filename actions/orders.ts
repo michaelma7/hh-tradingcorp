@@ -17,8 +17,8 @@ import { inventoryTransaction } from './products';
 export interface orderData {
   id: string;
   name: string;
-  createdBy: string;
-  customer: { id: string; name: string };
+  createdBy?: string;
+  customers: { id?: string; name: string };
   totalCents: number;
   status: boolean;
 }

@@ -44,7 +44,7 @@ export const getCurrentUser = cache(async () => {
     const token = await cookieStore.get('session')?.value;
     if (!token) redirect('/signin');
 
-    const user = await getUserFromToken();
+    const user = await getUserFromToken(token);
     if (!user) redirect('/signin');
     return user;
   } catch (err) {
