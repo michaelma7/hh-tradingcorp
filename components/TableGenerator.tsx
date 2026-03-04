@@ -10,8 +10,23 @@ import {
 import Link from 'next/link';
 import { CirclePlus } from 'lucide-react';
 
+interface TableData {
+  id: string;
+  Name?: string;
+  Location?: string | null;
+  Updated?: string;
+  Customer?: string;
+  Delivered?: boolean;
+  Total?: number;
+  Quantity?: number | null;
+  Reserved?: number | null;
+  Current?: number | null;
+  Manufacturer?: string;
+  OrderDate?: string;
+  Status?: 'received' | 'shipped' | 'pending';
+}
 type Props = {
-  data: any;
+  data: TableData[];
   label: string;
   className: string;
   link: string;

@@ -9,7 +9,7 @@ export default function Shell({
   children,
   data,
 }: {
-  children: any;
+  children: React.ReactNode;
   data: userData | undefined;
 }) {
   const changeUser = useProvider()!.changeUser;
