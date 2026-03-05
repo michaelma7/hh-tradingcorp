@@ -16,6 +16,8 @@ export interface purchaseOrderData {
   id: string;
   orderDate: string;
   status: 'received' | 'shipped' | 'pending';
+  shippingInfo?: string;
+  shipper?: string;
 }
 
 export type purchaseOrderItem = {
@@ -38,6 +40,8 @@ export type PurchaseOrderFormState = {
     fieldErrors: {
       orderDate?: string[];
       status?: string[];
+      shippingInfo?: string[];
+      shipper?: string[];
     };
   };
 } | null;
@@ -63,6 +67,8 @@ const itemsSchema = z.array(purchaseOrderItemSchema);
 const purchaseOrderSchema = z.object({
   orderDate: z.string(),
   status: z.enum(['received', 'shipped', 'pending']),
+  shippingInfo: z.string(),
+  shipper: z.string(),
 });
 
 const updateSchema = purchaseOrderSchema.extend({
@@ -77,6 +83,8 @@ export async function createPurchaseOrder(
     const inputs = {
       orderDate: formData.get('orderDate'),
       status: formData.get('status'),
+      shippingInfo: formData.get('shippingInfo'),
+      shipper: formData.get('shipper'),
     };
     const purchaseOrder = purchaseOrderSchema.safeParse(inputs);
     if (!purchaseOrder.success)
@@ -85,6 +93,8 @@ export async function createPurchaseOrder(
       const newPurchaseOrder: typeof purchaseOrders.$inferInsert = {
         orderDate: purchaseOrder.data.orderDate,
         status: purchaseOrder.data.status,
+        shippingInfo: purchaseOrder.data.shippingInfo,
+        shipper: purchaseOrder.data.shipper,
       };
 
       const [newId] = await tx
@@ -156,15 +166,19 @@ export async function updatePurchaseOrder(
       id: formData.get('id'),
       orderDate: formData.get('orderDate'),
       status: formData.get('status'),
-      expirationDate: formData.getAll('expirationDate'),
+      shippingInfo: formData.get('shippingInfo'),
+      shipper: formData.get('shipper'),
     };
     const update = updateSchema.safeParse(inputs);
     if (!update.success) return { errors: z.flattenError(update.error) };
+
     await db.transaction(async (tx) => {
       tx.update(purchaseOrders)
         .set({
           orderDate: update.data.orderDate,
           status: update.data.status,
+          shippingInfo: update.data.shippingInfo,
+          shipper: update.data.shipper,
         })
         .where(eq(purchaseOrders.id, `${update.data.id}`));
       if (update.data.status === 'received') {
@@ -238,7 +252,6 @@ export async function modifyPurchaseOrderItems(
           expirationDate: itemData.expirationDate[i],
         });
       }
-      console.log(items);
       const verifiedItems = itemsSchema.safeParse(items);
       if (!verifiedItems.success)
         return { errors: z.flattenError(verifiedItems.error) };
@@ -350,8 +363,10 @@ export async function getAllPurchaseOrders() {
   try {
     return await db
       .select({
-        OrderDate: purchaseOrders.orderDate,
-        Status: purchaseOrders.status,
+        订单日期: purchaseOrders.orderDate,
+        配送状态: purchaseOrders.status,
+        发货人: purchaseOrders.shipper,
+        配送信息: purchaseOrders.shippingInfo,
         id: purchaseOrders.id,
       })
       .from(purchaseOrders);
