@@ -166,6 +166,8 @@ export const purchaseOrders = sqliteTable('purchase_orders', {
   })
     .default('pending')
     .notNull(),
+  shippingInfo: text('shipping_info').default(''),
+  shipper: text('shipper').default(''),
 });
 
 export const purchaseOrderRelations = relations(purchaseOrders, ({ many }) => ({
