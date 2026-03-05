@@ -4,7 +4,6 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
   Button,
   DatePicker,
@@ -13,6 +12,7 @@ import {
   Radio,
   Autocomplete,
   AutocompleteItem,
+  Input,
 } from '@heroui/react';
 import Submit from './Submit';
 import {
@@ -27,7 +27,7 @@ import {
 import { productsForOrders } from '@/actions/products';
 import { useState, useActionState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
-import { parseDate, DateValue } from '@internationalized/date';
+import { parseDate } from '@internationalized/date';
 
 export default function AddEditPurchaseOrderModal({
   edit,
@@ -42,18 +42,18 @@ export default function AddEditPurchaseOrderModal({
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const formAction = (
+  const formAction = async (
     prevState: PurchaseOrderItemFormState | PurchaseOrderFormState,
     formData: FormData,
   ): Promise<PurchaseOrderFormState | PurchaseOrderItemFormState> => {
     if (edit) {
       for (const item of items) formData.append('productId', item.productId);
       formData.append('id', orderData!.id);
-      modifyPurchaseOrderItems(prevState, formData);
-      return updatePurchaseOrder(prevState, formData);
+      await modifyPurchaseOrderItems(prevState, formData);
+      return await updatePurchaseOrder(prevState, formData);
     } else {
       for (const item of items) formData.append('productId', item.productId);
-      return createPurchaseOrder(prevState, formData);
+      return await createPurchaseOrder(prevState, formData);
     }
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
@@ -104,54 +104,68 @@ export default function AddEditPurchaseOrderModal({
     <>
       {edit ? (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
-          Edit <CirclePlus size={16} />
+          Edit: 编辑 <CirclePlus size={16} />
         </Button>
       ) : (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
-          Create New Purchase Order <CirclePlus size={16} />
+          新库存订单 <CirclePlus size={16} />
         </Button>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size='3xl'>
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className='flex flex-col gap-1'>
-                New Purchase Order
+              <ModalHeader className='flex flex-col'>
+                {edit ? '编辑库存订单' : '新库存订单'}
               </ModalHeader>
               <ModalBody>
-                <form action={submit}>
+                <form action={submit} className='flex flex-col gap-3'>
                   <DatePicker
-                    label='Order Date'
+                    label='订单日期'
                     isRequired
                     name='orderDate'
                     defaultValue={edit ? parseDate(orderData!.orderDate) : null}
+                    selectorButtonPlacement='start'
+                    className='w-1/2'
                   />
                   <RadioGroup
-                    label='Delivery Status'
-                    defaultValue={edit ? orderData!.status : 'pending'}
+                    label='配送状态'
+                    defaultValue={edit ? orderData?.status : 'pending'}
                     name='status'
                   >
-                    <Radio value='pending'>Pending</Radio>
-                    <Radio value='shipped'>Shipped</Radio>
-                    <Radio value='received'>Received</Radio>
+                    <Radio value='pending'>待办的</Radio>
+                    <Radio value='shipped'>已发货</Radio>
+                    <Radio value='received'>已收到</Radio>
                   </RadioGroup>
-                  <div className='grid grid-cols-12 gap-4 font-semibold text-gray-700 text-sm'>
-                    <div className='col-span-5'>Product Name</div>
-                    <div className='col-span-2'>Quantity</div>
-                    <div className='col-span-2'>Unit Price</div>
-                    <div className='col-span-2'>Expiration Date</div>
+                  <Input
+                    label='发货人'
+                    name='shipper'
+                    defaultValue={edit ? orderData?.shipper : ''}
+                    className='w-1/2'
+                  />
+                  <Input
+                    label='配送信息'
+                    name='shippingInfo'
+                    defaultValue={edit ? orderData?.shippingInfo : ''}
+                    className='w-1/2'
+                  />
+
+                  <div className='grid grid-cols-13 gap-3 font-semibold text-gray-700 text-sm'>
+                    <div className='col-span-4'>产品名称</div>
+                    <div className='col-span-2'>数量</div>
+                    <div className='col-span-2'>价格</div>
+                    <div className='col-span-3'>失效日期</div>
                     <div className='col-span-1'></div>
                   </div>
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className='grid grid-cols-12 gap-4 items-center'
+                      className='grid grid-cols-13 gap-3 items-center'
                     >
                       <Autocomplete
                         isClearable
                         type='text'
-                        label='Product'
-                        labelPlacement='outside-left'
+                        label='产品'
                         name='product'
                         items={productData}
                         value={item.productId}
@@ -160,7 +174,7 @@ export default function AddEditPurchaseOrderModal({
                           const id = JSON.stringify(key);
                           updateItem(item.id!, 'productId', id);
                         }}
-                        className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        className='col-span-4 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500'
                       >
                         {(product) => (
                           <AutocompleteItem key={product.key}>
@@ -170,7 +184,7 @@ export default function AddEditPurchaseOrderModal({
                       </Autocomplete>
                       <NumberInput
                         type='number'
-                        label='Quantity'
+                        label='数量'
                         name='quantity'
                         minValue={0}
                         hideStepper
@@ -178,11 +192,11 @@ export default function AddEditPurchaseOrderModal({
                         onValueChange={(value) =>
                           updateItem(item.id!, 'quantity', value || 0)
                         }
-                        className='col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        className='col-span-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500'
                       />
                       <NumberInput
                         type='number'
-                        label='Price'
+                        label='价格'
                         name='price'
                         minValue={0}
                         hideStepper
@@ -191,10 +205,10 @@ export default function AddEditPurchaseOrderModal({
                         onValueChange={(value) =>
                           updateItem(item.id!, 'price', value || 0)
                         }
-                        className='col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        className='col-span-2  border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500'
                       />
                       <DatePicker
-                        label='Expiration Date'
+                        label='失效日期'
                         name='expirationDate'
                         isRequired
                         value={
@@ -209,17 +223,19 @@ export default function AddEditPurchaseOrderModal({
                             value!.toString(),
                           )
                         }
+                        selectorButtonPlacement='start'
+                        className='col-span-3'
                       />
                       <Button
                         onPress={() => removeRow(item.id!)}
-                        className='col-span-1 p-2 text-red-600 hover:bg-red-50 rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
+                        className='col-span-1 p-1 text-red-600 hover:bg-red-100 rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
                       >
                         <Trash2 size={18} />
                       </Button>
                     </div>
                   ))}
                   <Button onPress={addItem}>
-                    <Plus size={14} /> Add Item
+                    <Plus size={14} /> 加物品
                   </Button>
                   <div className='flex justify-end'>
                     <div className='flex justify-between text-gray-900 pt-3 border-t'>
@@ -227,18 +243,13 @@ export default function AddEditPurchaseOrderModal({
                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
-                  <Submit label={'Submit'} disabled={pending} />
-                  <Button color='danger' variant='light' onPress={onClose}>
-                    Cancel
+                  <Submit label={'提交'} disabled={pending} />
+                  <Button color='danger' variant='flat' onPress={onClose}>
+                    取消
                   </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
               </ModalBody>
-              <ModalFooter>
-                <Button color='danger' variant='light' onPress={onClose}>
-                  Cancel
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>
