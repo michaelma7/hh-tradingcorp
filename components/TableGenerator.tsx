@@ -43,7 +43,7 @@ export default function TableGenerator({
     const tableColumns = [];
     for (let i = 0; i < columnArr.length; i++) {
       if (columnArr[i] === 'id') {
-        tableColumns.push({ id: 'details', label: 'Details' });
+        tableColumns.push({ id: 'details', label: '细节' });
         continue;
       }
       tableColumns.push({ id: columnArr[i], label: columnArr[i] });
