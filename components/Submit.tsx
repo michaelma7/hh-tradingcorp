@@ -14,7 +14,13 @@ const Submit = ({
   const { pending } = useFormStatus();
 
   return (
-    <Button {...btnProps} disabled={disabled} type='submit' isLoading={pending}>
+    <Button
+      {...btnProps}
+      disabled={disabled}
+      type='submit'
+      color='primary'
+      isLoading={pending}
+    >
       {label}
     </Button>
   );

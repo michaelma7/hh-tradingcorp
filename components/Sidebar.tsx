@@ -22,7 +22,7 @@ export default function Sidebar() {
   const path = usePathname();
   const active = 'bg-secondary hover:bg-secondary-300';
   return (
-    <div className='w-full h-full px-3 relative'>
+    <div className='w-full h-full p-3 relative'>
       <div className='grid gap-2'>
         {links.map((link) => (
           <div className='w-full ' key={link.route}>
