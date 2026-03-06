@@ -115,11 +115,11 @@ export default function AddEditPurchaseOrderModal({
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className='flex flex-col'>
+              <ModalHeader className=''>
                 {edit ? '编辑库存订单' : '新库存订单'}
               </ModalHeader>
               <ModalBody>
-                <form action={submit} className='flex flex-col gap-3'>
+                <form action={submit} className='flex flex-col gap-3 pb-4'>
                   <DatePicker
                     label='订单日期'
                     isRequired

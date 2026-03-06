@@ -27,11 +27,14 @@ export default function AddEditManufacturerModal({
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = { message: null };
-  const formAction = (prevState: ManufacturerFormState, formData: FormData) => {
+  const formAction = async (
+    prevState: ManufacturerFormState,
+    formData: FormData,
+  ) => {
     if (edit) {
       formData.append('id', data!.id as string);
-      return updateManfacturer(prevState, formData);
-    } else return createManfacturer(prevState, formData);
+      return await updateManfacturer(prevState, formData);
+    } else return await createManfacturer(prevState, formData);
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
 
@@ -39,42 +42,40 @@ export default function AddEditManufacturerModal({
     <>
       {edit ? (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
-          Edit <CirclePlus size={16} />
+          Edit: 编辑 <CirclePlus size={16} />
         </Button>
       ) : (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
-          Create New Manufacturer <CirclePlus size={16} />
+          创建新生产厂家 <CirclePlus size={16} />
         </Button>
       )}
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className='flex flex-col gap-1'>
-                New Manufacturer
-              </ModalHeader>
+              <ModalHeader>{edit ? '编辑生产厂家' : '新生产厂家'}</ModalHeader>
               <ModalBody>
-                <form action={submit}>
+                <form action={submit} className='pb-4 flex flex-col gap-2'>
                   <Input
                     isClearable
                     isRequired
                     defaultValue={edit ? data!.name : ''}
                     type='text'
                     name='name'
-                    label='Manufacturer Name'
-                    className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    label='生产厂家名称'
+                    className='rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
                   <Input
                     isClearable
-                    defaultValue={data!.contact ? data!.contact : ''}
+                    defaultValue={data?.contact ? data?.contact : ''}
                     type='text'
                     name='contact'
-                    label='Contact'
-                    className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    label='联系'
+                    className='rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
-                  <Submit label={'Submit'} disabled={pending} />
-                  <Button color='danger' variant='light' onPress={onClose}>
-                    Cancel
+                  <Submit label={'提交'} disabled={pending} />
+                  <Button color='danger' variant='flat' onPress={onClose}>
+                    取消
                   </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}

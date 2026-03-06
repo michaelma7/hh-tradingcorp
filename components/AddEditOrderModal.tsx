@@ -4,7 +4,6 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
   Autocomplete,
   AutocompleteItem,
@@ -45,7 +44,7 @@ export default function AddEditOrderModal({
     edit ? orderData!.status : false,
   );
   const initState = { message: null };
-  const formAction = (
+  const formAction = async (
     prevState: OrderFormState | OrderItemFormState,
     formData: FormData,
   ): Promise<OrderFormState | OrderItemFormState> => {
@@ -54,13 +53,13 @@ export default function AddEditOrderModal({
       formData.append('id', orderData!.id);
       formData.append('totalCents', JSON.stringify(total * 100));
       formData.set('status', JSON.stringify(deliveryStatus));
-      modifyOrderItems(prevState, formData);
-      return updateOrder(prevState, formData);
+      await modifyOrderItems(prevState, formData);
+      return await updateOrder(prevState, formData);
     } else {
       for (const item of items) formData.append('productId', item.productId);
       formData.append('totalCents', JSON.stringify(total * 100));
       formData.set('status', JSON.stringify(deliveryStatus));
-      return createOrder(prevState, formData);
+      return await createOrder(prevState, formData);
     }
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
@@ -114,74 +113,62 @@ export default function AddEditOrderModal({
     <div>
       {edit ? (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
-          Edit <CirclePlus size={16} />
+          Edit: 编辑 <CirclePlus size={16} />
         </Button>
       ) : (
-        <Button
-          color='primary'
-          size='md'
-          radius='md'
-          disableAnimation
-          onPress={onOpen}
-          className='flex'
-        >
-          Create New Order <CirclePlus size={16} />
+        <Button color='primary' size='md' radius='md' onPress={onOpen}>
+          下新订单 <CirclePlus size={16} />
         </Button>
       )}
-      <Modal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        size='3xl'
-        className=''
-      >
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size='3xl'>
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className='flex flex-col gap-1'>
-                New Order
-              </ModalHeader>
+              <ModalHeader>{edit ? '编辑订单' : '新订单'}</ModalHeader>
               <ModalBody>
                 <form
                   action={submit}
-                  className='border border-default-100 shadow-lg rounded-md p-3 flex flex-col gap-2'
+                  className='rounded-md p-3 flex flex-col gap-3 pb-4'
                 >
                   <Input
                     type='text'
                     name='name'
-                    label='Order Name'
+                    label='订单号'
                     defaultValue={edit ? orderData!.name : ''}
                     isRequired
+                    className='w-1/2'
                   />
                   <Input
                     type='text'
                     name='customer'
-                    label='Customer'
+                    label='顾客'
                     defaultValue={edit ? orderData!.customers.name : ''}
                     isRequired
+                    className='w-1/2'
                   />
                   <Checkbox
-                    aria-label='Order Delivered?'
+                    aria-label='送到了吗？'
                     name='status'
                     size='sm'
                     radius='full'
                     isSelected={deliveryStatus}
                     onValueChange={setDeliveryStatus}
                   >
-                    Delivered?
+                    送到了吗?
                   </Checkbox>
                   <Input
                     type='text'
                     name='createdBy'
-                    label='Username'
+                    label='用户名'
                     isReadOnly
                     defaultValue={currentUser}
-                    className='col-span-5 px-3 py-2 border border-gray-300 rounded-md'
+                    className='w-1/2 rounded-md'
                   />
                   <div className='grid grid-cols-12 gap-4 font-semibold text-gray-700 text-sm'>
-                    <div className='col-span-5'>Product Name</div>
-                    <div className='col-span-2'>Quantity</div>
-                    <div className='col-span-2'>Unit Price</div>
-                    <div className='col-span-2'>Subtotal</div>
+                    <div className='col-span-4'>产品名称</div>
+                    <div className='col-span-2'>数量</div>
+                    <div className='col-span-2'>价格</div>
+                    <div className='col-span-2'>小计</div>
                     <div className='col-span-1'></div>
                   </div>
                   {items.map((item) => (
@@ -192,8 +179,7 @@ export default function AddEditOrderModal({
                       <Autocomplete
                         isClearable
                         type='text'
-                        label='Product'
-                        labelPlacement='outside-left'
+                        label='产品'
                         name='product'
                         items={productData}
                         value={item.productId}
@@ -202,7 +188,7 @@ export default function AddEditOrderModal({
                           const id = JSON.stringify(key);
                           updateItem(item.id!, 'productId', JSON.parse(id));
                         }}
-                        className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        className='col-span-4 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                       >
                         {(product) => (
                           <AutocompleteItem className='' key={product.key}>
@@ -212,7 +198,7 @@ export default function AddEditOrderModal({
                       </Autocomplete>
                       <NumberInput
                         type='number'
-                        label='Quantity'
+                        label='数量'
                         name='quantity'
                         minValue={0}
                         hideStepper
@@ -220,11 +206,11 @@ export default function AddEditOrderModal({
                         onValueChange={(value) =>
                           updateItem(item.id!, 'quantity', value || 0)
                         }
-                        className='col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        className='col-span-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                       />
                       <NumberInput
                         type='number'
-                        label='Price'
+                        label='价格'
                         name='price'
                         minValue={0}
                         hideStepper
@@ -233,14 +219,15 @@ export default function AddEditOrderModal({
                         onValueChange={(value) =>
                           updateItem(item.id!, 'price', value || 0)
                         }
-                        className='col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        className='col-span-2  rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                       />
                       <NumberInput
-                        className='col-span-2 px-3 py-2 text-right font-medium text-gray-700'
+                        className='col-span-2 text-right font-medium text-gray-700'
                         isDisabled
+                        hideStepper
                         type='number'
                         name='subtotal'
-                        label='Subtotal'
+                        label='小计'
                         formatOptions={{ style: 'currency', currency: 'USD' }}
                         value={item.quantity! * item.price!}
                         onValueChange={(value) =>
@@ -249,33 +236,28 @@ export default function AddEditOrderModal({
                       />
                       <Button
                         onPress={() => removeRow(item.id!)}
-                        className='col-span-1 p-2 text-red-600 hover:bg-red-50 rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
+                        className='col-span-1 text-red-600 hover:bg-red-50 rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
                       >
                         <Trash2 size={18} />
                       </Button>
                     </div>
                   ))}
                   <Button onPress={addItem}>
-                    <Plus size={14} /> Add Item
+                    <Plus size={14} /> 加物品
                   </Button>
                   <div className='flex justify-end'>
                     <div className='flex justify-between text-gray-900 pt-3 border-t'>
-                      <span>Total:</span>
+                      <span>总数:</span>
                       <span id='total'>${total.toFixed(2)}</span>
                     </div>
                   </div>
-                  <Submit label={'Submit'} disabled={pending} />
-                  <Button color='danger' variant='light' onPress={onClose}>
-                    Cancel
+                  <Submit label={'提交'} disabled={pending} />
+                  <Button color='danger' variant='flat' onPress={onClose}>
+                    取消
                   </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
               </ModalBody>
-              <ModalFooter>
-                <Button color='danger' variant='light' onPress={onClose}>
-                  Cancel
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>

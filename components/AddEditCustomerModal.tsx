@@ -27,11 +27,14 @@ export default function AddEditCustomerModal({
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const initState = null;
-  const formAction = (prevState: CustomerFormState, formData: FormData) => {
+  const formAction = async (
+    prevState: CustomerFormState,
+    formData: FormData,
+  ) => {
     if (edit) {
       formData.append('id', data!.id as string);
-      return updateCustomer(prevState, formData);
-    } else return createCustomer(prevState, formData);
+      return await updateCustomer(prevState, formData);
+    } else return await createCustomer(prevState, formData);
   };
   const [formState, submit, pending] = useActionState(formAction, initState);
 
@@ -39,42 +42,40 @@ export default function AddEditCustomerModal({
     <>
       {edit ? (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
-          Edit <CirclePlus size={16} />
+          Edit: 编辑 <CirclePlus size={16} />
         </Button>
       ) : (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
-          Create New Customer <CirclePlus size={16} />
+          创建新客户 <CirclePlus size={16} />
         </Button>
       )}
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className='flex flex-col gap-1'>
-                New Customer
-              </ModalHeader>
+              <ModalHeader>{edit ? '编辑客户' : '新客户'}</ModalHeader>
               <ModalBody>
-                <form action={submit}>
+                <form action={submit} className='pb-4 flex flex-col gap-2'>
                   <Input
                     isClearable
                     isRequired
                     defaultValue={edit ? data!.name : ''}
                     type='text'
                     name='name'
-                    label='Customer Name'
-                    className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    label='客户名称'
+                    className='col-span-5 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
                   <Input
                     isClearable
-                    defaultValue={data!.location ? data!.location : ''}
+                    defaultValue={data?.location ? data?.location : ''}
                     type='text'
                     name='location'
-                    label='Location'
-                    className='col-span-5 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    label='地点'
+                    className='col-span-5 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                   />
-                  <Submit label='Submit' disabled={pending} />
-                  <Button color='danger' variant='light' onPress={onClose}>
-                    Cancel
+                  <Submit label='提交' disabled={pending} />
+                  <Button color='danger' variant='flat' onPress={onClose}>
+                    取消
                   </Button>
                 </form>
                 {formState?.message && <p>{formState.message}</p>}
