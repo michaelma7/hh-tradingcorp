@@ -39,7 +39,7 @@ export default function AddEditManufacturerModal({
   const [formState, submit, pending] = useActionState(formAction, initState);
 
   return (
-    <>
+    <div>
       {edit ? (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
           Edit: 编辑 <CirclePlus size={16} />
@@ -84,6 +84,6 @@ export default function AddEditManufacturerModal({
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 }

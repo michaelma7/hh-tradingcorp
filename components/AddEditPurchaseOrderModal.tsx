@@ -101,7 +101,7 @@ export default function AddEditPurchaseOrderModal({
   );
 
   return (
-    <>
+    <div>
       {edit ? (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
           Edit: 编辑 <CirclePlus size={16} />
@@ -140,13 +140,15 @@ export default function AddEditPurchaseOrderModal({
                   <Input
                     label='发货人'
                     name='shipper'
-                    defaultValue={edit ? orderData?.shipper : ''}
+                    defaultValue={orderData?.shipper ? orderData?.shipper : ''}
                     className='w-1/2'
                   />
                   <Input
                     label='配送信息'
                     name='shippingInfo'
-                    defaultValue={edit ? orderData?.shippingInfo : ''}
+                    defaultValue={
+                      orderData?.shippingInfo ? orderData?.shippingInfo : ''
+                    }
                     className='w-1/2'
                   />
 
@@ -254,6 +256,6 @@ export default function AddEditPurchaseOrderModal({
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 }

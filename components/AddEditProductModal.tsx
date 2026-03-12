@@ -39,7 +39,7 @@ export default function AddEditProductModal({
   const [formState, submit, pending] = useActionState(formAction, initState);
 
   return (
-    <>
+    <div>
       {edit ? (
         <Button color='primary' size='md' radius='md' onPress={onOpen}>
           Edit: 编辑 <CirclePlus size={16} />
@@ -49,7 +49,7 @@ export default function AddEditProductModal({
           创建新产品 <CirclePlus size={16} />
         </Button>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size='md'>
         <ModalContent>
           {(onClose) => (
             <>
@@ -112,6 +112,6 @@ export default function AddEditProductModal({
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 }
