@@ -19,7 +19,7 @@ export default async function ProductPage({
         <DeleteForm id={id} action={deleteProduct} />
       </div>
       <span>产品名: {product.name}</span>
-      {/* <span>生产厂家: {product.manufacturedBy.name}</span> */}
+      <span>生产厂家: {product.manufacturedBy.name}</span>
       <span>数量: {product.quantity}</span>
       <span>保留的: {product.reserved}</span>
       <span>目前可用: {product.current}</span>
