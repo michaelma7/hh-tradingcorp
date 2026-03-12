@@ -8,16 +8,19 @@ import {
   purchaseOrders,
 } from '@/db/schema';
 import bcrypt from 'bcrypt';
+import { config } from 'dotenv';
+
+config({ path: '.env' });
 
 const seedDb = async () => {
   try {
     const newUser = await db.query.users.findFirst();
     if (!newUser) {
       console.error('create an account first');
-      const pw = await bcrypt.hash('Hhtradingcorp1!', 10);
+      const pw = await bcrypt.hash(`${process.env.ADMIN_PW}`, 10);
       const [newAdmin] = await db
         .insert(users)
-        .values({ email: 'aznxsyko@gmail.com', password: `${pw}` })
+        .values({ email: `${process.env.ADMIN_EMAIL}`, password: `${pw}` })
         .returning({ id: users.id });
       console.log('inserted user', newAdmin);
     }
