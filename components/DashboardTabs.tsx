@@ -36,7 +36,7 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
         <TableCell>{order.name}</TableCell>
         <TableCell>{order.customers.name}</TableCell>
         <TableCell>${order.totalCents / 100}</TableCell>
-        <TableCell>{order.status}</TableCell>
+        <TableCell>{order.status ? 'Yes' : 'No'}</TableCell>
       </TableRow>
     );
   });
@@ -57,6 +57,8 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
         <TableCell>{purchaseOrder.id}</TableCell>
         <TableCell>{purchaseOrder.orderDate}</TableCell>
         <TableCell>{purchaseOrder.status}</TableCell>
+        <TableCell>{purchaseOrder.shipper}</TableCell>
+        <TableCell>{purchaseOrder.shippingInfo}</TableCell>
       </TableRow>
     );
   });
@@ -80,20 +82,20 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
   });
   return (
     <Tabs aria-label='Options'>
-      <Tab key='orders' title='Orders'>
+      <Tab key='orders' title='订单'>
         <div>
           <div className='flex gap-2 align-middle p-2'>
             <AddEditOrderModal productData={data.productData} edit={false} />
             <Button color='primary' size='md' radius='md'>
-              <Link href='/dashboard/orders'>View All Orders</Link>
+              <Link href='/dashboard/orders'>看所有订单</Link>
             </Button>
           </div>
-          <Table aria-label='Orders Dashboard Table'>
+          <Table aria-label='Orders Dashboard Table' isStriped>
             <TableHeader>
-              <TableColumn>Order Name</TableColumn>
-              <TableColumn>Customer Name</TableColumn>
-              <TableColumn>Total</TableColumn>
-              <TableColumn>Delivered?</TableColumn>
+              <TableColumn>订单号</TableColumn>
+              <TableColumn>顾客</TableColumn>
+              <TableColumn>总数</TableColumn>
+              <TableColumn>送到了吗?</TableColumn>
             </TableHeader>
             <TableBody emptyContent={'No rows to display'}>
               {orderRows}
@@ -101,77 +103,77 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
           </Table>
         </div>
       </Tab>
-      <Tab key='purchaseOrders' title='Purchase Orders'>
+      <Tab key='purchaseOrders' title='库存订单'>
         <div className='flex gap-2 align-middle p-2'>
           <AddEditPurchaseOrderModal
             edit={false}
             productData={data.productData}
           />
           <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/purchaseOrders'>
-              View All Purchase Orders
-            </Link>
+            <Link href='/dashboard/purchaseOrders'>看所有库存订单</Link>
           </Button>
         </div>
-        <Table aria-label='Purchase Orders Dashboard Table'>
+        <Table aria-label='Purchase Orders Dashboard Table' isStriped>
           <TableHeader>
             <TableColumn>Id</TableColumn>
-            <TableColumn>Order Date</TableColumn>
-            <TableColumn>Status</TableColumn>
+            <TableColumn>订单日期</TableColumn>
+            <TableColumn>配送状态</TableColumn>
+            <TableColumn>发货人</TableColumn>
+            <TableColumn>配送信息</TableColumn>
           </TableHeader>
           <TableBody emptyContent={'No rows to display'}>
             {purchaseOrderRows}
           </TableBody>
         </Table>
       </Tab>
-      <Tab key='products' title='Products'>
+      <Tab key='products' title='产品'>
         <div className='flex gap-2 align-middle p-2'>
           <AddEditProductModal edit={false} />
           <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/products'>View All Products</Link>
+            <Link href='/dashboard/products'>看所有产品</Link>
           </Button>
         </div>
 
-        <Table aria-label='Products Dashboard Table'>
+        <Table aria-label='Products Dashboard Table' isStriped>
           <TableHeader>
-            <TableColumn>Product</TableColumn>
-            <TableColumn>Quantity</TableColumn>
-            {/* <TableColumn>Manufactured By</TableColumn> */}
+            <TableColumn>产品名</TableColumn>
+            <TableColumn>数量</TableColumn>
+            {/* <TableColumn>生产厂家</TableColumn> */}
           </TableHeader>
           <TableBody emptyContent={'No rows to display'}>
             {productRows}
           </TableBody>
         </Table>
       </Tab>
-      <Tab key='customers' title='Customers'>
+      <Tab key='customers' title='顾客'>
         <div className='flex gap-2 align-middle p-2'>
           <AddEditCustomerModal edit={false} />
           <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/customers'>View All Customers</Link>
+            <Link href='/dashboard/customers'>看所有顾客</Link>
           </Button>
         </div>
 
-        <Table aria-label='Customer Dashboard Table'>
+        <Table aria-label='Customer Dashboard Table' isStriped>
           <TableHeader>
-            <TableColumn>Customer Name</TableColumn>
-            <TableColumn>Location</TableColumn>
+            <TableColumn>名称</TableColumn>
+            <TableColumn>地点</TableColumn>
           </TableHeader>
           <TableBody emptyContent={'No rows to display'}>
             {customerRows}
           </TableBody>
         </Table>
       </Tab>
-      <Tab key='manufacturers' title='Manufacturers'>
+      <Tab key='manufacturers' title='生产厂家'>
         <div className='flex gap-2 align-middle p-2'>
           <AddEditManufacturerModal edit={false} />
           <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/manufacturers'>View All Manufacturers</Link>
+            <Link href='/dashboard/manufacturers'>看所有生产厂家</Link>
           </Button>
         </div>
-        <Table aria-label='Manufacturers Dashboard Table'>
+        <Table aria-label='Manufacturers Dashboard Table' isStriped>
           <TableHeader>
-            <TableColumn>Manufacturer Name</TableColumn>
-            <TableColumn>Contact</TableColumn>
+            <TableColumn>名称</TableColumn>
+            <TableColumn>联系</TableColumn>
           </TableHeader>
           <TableBody emptyContent={'No rows to display'}>
             {manufacturerRows}
