@@ -16,4 +16,3 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: ['/dashboard/:path*', '/'],
 };
-// '/((?!api|_next/data|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)'

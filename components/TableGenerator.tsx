@@ -9,6 +9,7 @@ import {
 } from '@heroui/table';
 import Link from 'next/link';
 import { CirclePlus } from 'lucide-react';
+import { lineItemData } from '@/actions/orders';
 
 interface TableData {
   id: string;
@@ -26,7 +27,7 @@ interface TableData {
   Status?: 'received' | 'shipped' | 'pending';
 }
 type Props = {
-  data: TableData[];
+  data: TableData[] | lineItemData[];
   label: string;
   className: string;
   link: string;
@@ -54,7 +55,7 @@ export default function TableGenerator({
       const rowCells = [];
       const vals = Object.values(row);
       for (let i = 0; i < vals.length; i++) {
-        if (i === vals.length - 1) {
+        if (i === vals.length - 1 && columnArr.includes('id')) {
           const rowLinkStr = linkStr + `${row.id}`;
           rowCells.push(
             <TableCell>
@@ -73,7 +74,13 @@ export default function TableGenerator({
       rows.push(<TableRow key={row.id}>{rowCells}</TableRow>);
     }
     return (
-      <Table aria-label={label} className={className}>
+      <Table
+        aria-label={label}
+        className={className}
+        isStriped
+        selectionMode='single'
+        color='primary'
+      >
         <TableHeader columns={tableColumns}>
           {(column) => (
             <TableColumn key={column.id}>{column.label}</TableColumn>
