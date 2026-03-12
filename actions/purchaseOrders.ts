@@ -16,22 +16,21 @@ export interface purchaseOrderData {
   id: string;
   orderDate: string;
   status: 'received' | 'shipped' | 'pending';
-  shippingInfo?: string;
-  shipper?: string;
+  shippingInfo?: string | null;
+  shipper?: string | null;
 }
 
-export type purchaseOrderItem = {
+export interface purchaseOrderItem {
   id?: string;
   productId: string;
   quantity: number;
   price: number;
   expirationDate: string;
-};
+}
 
-export type purchaseOrderItemChanges = {
-  addOrUpdate: purchaseOrderItem[];
-  remove: purchaseOrderItem[];
-};
+export interface purchaseOrderLineItem extends purchaseOrderItem {
+  subtotal?: number;
+}
 
 export type PurchaseOrderFormState = {
   message?: string;
@@ -310,6 +309,7 @@ export const getPurchaseOrdersForDashboard = unstable_cache(
   async () => {
     const data = await db.query.purchaseOrders.findMany({
       orderBy: [asc(purchaseOrders.orderDate)],
+      limit: 25,
     });
     return data ?? [];
   },

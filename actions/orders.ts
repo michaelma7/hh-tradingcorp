@@ -23,12 +23,16 @@ export interface orderData {
   status: boolean;
 }
 
-export type orderItemData = {
+export interface orderItemData {
   id?: string;
   productId: string;
   quantity?: number;
   price?: number;
-};
+}
+
+export interface lineItemData extends orderItemData {
+  subtotal?: number;
+}
 
 export type OrderFormState = {
   message?: string | null;
@@ -388,11 +392,11 @@ export async function getAllOrders() {
   try {
     return await db
       .select({
-        Name: orders.name,
-        Updated: orders.lastUpdated,
-        Customer: customers.name,
-        Delivered: orders.status,
-        Total: orders.totalCents,
+        订单号: orders.name,
+        最后更新: orders.lastUpdated,
+        顾客: customers.name,
+        送到了吗: orders.status,
+        总数: orders.totalCents,
         id: orders.id,
       })
       .from(orders)
