@@ -17,13 +17,13 @@ export default async function CustomersPage({
   if (!customer) redirect('/dashboard/customers');
 
   return (
-    <div>
-      <h2>{customer.name}</h2>
-      <h4>{customer.location}</h4>
-      <div>
+    <div className='flex flex-col gap-2 p-2'>
+      <div className='flex gap-2'>
         <AddEditCustomerModal edit={true} data={customer} />
         <DeleteForm id={id} action={deleteCustomer} />
       </div>
+      <span>名称: {customer.name}</span>
+      <span>地点: {customer.location}</span>
     </div>
   );
 }

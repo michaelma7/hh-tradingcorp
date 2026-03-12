@@ -17,13 +17,13 @@ export default async function ManufacturerPage({
     await getOneManufacturer(id);
   if (!manufacturer) redirect('/dashboard/manufacturers');
   return (
-    <div>
-      <h2>{manufacturer.name}</h2>
-      <div>{manufacturer.contact}</div>
-      <div>
+    <div className='flex flex-col gap-2 p-2'>
+      <div className='flex gap-2'>
         <AddEditManufacturerModal edit={true} data={manufacturer} />
         <DeleteForm id={id} action={deleteManfacturer} />
       </div>
+      <span>名称: {manufacturer.name}</span>
+      <span>联系: {manufacturer.contact}</span>
     </div>
   );
 }

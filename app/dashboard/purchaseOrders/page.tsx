@@ -7,7 +7,7 @@ export default async function PurchaseOrders() {
   const purchaseOrders = await getAllPurchaseOrders();
   const products = await getProductsforOrders();
   return (
-    <div>
+    <div className='flex flex-col gap-2 p-2'>
       <AddEditPurchaseOrderModal edit={false} productData={products} />
       <TableGenerator
         data={purchaseOrders}

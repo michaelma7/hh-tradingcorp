@@ -13,16 +13,16 @@ export default async function ProductPage({
   if (!product) redirect('/dashboard/products');
 
   return (
-    <div>
-      <h2>{product.name}</h2>
-      <h4>{product.manufacturedBy.name}</h4>
-      <h4>Quantity: {product.quantity}</h4>
-      <h4>Reserved: {product.reserved}</h4>
-      <h4>Available: {product.current}</h4>
-      <div>
+    <div className='flex flex-col gap-2 p-2'>
+      <div className='flex gap-2'>
         <AddEditProductModal edit={true} data={product} />
         <DeleteForm id={id} action={deleteProduct} />
       </div>
+      <span>产品名: {product.name}</span>
+      {/* <span>生产厂家: {product.manufacturedBy.name}</span> */}
+      <span>数量: {product.quantity}</span>
+      <span>保留的: {product.reserved}</span>
+      <span>目前可用: {product.current}</span>
     </div>
   );
 }

@@ -7,7 +7,7 @@ export default async function Orders() {
   const orders = await getAllOrders();
   const products = await getProductsforOrders();
   return (
-    <div>
+    <div className='flex flex-col gap-2 p-2'>
       <AddEditOrderModal productData={products} edit={false} />
       {orders.length ? (
         <TableGenerator

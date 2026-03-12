@@ -5,7 +5,7 @@ import TableGenerator from '@/components/TableGenerator';
 export default async function Customers() {
   const customers = await getAllCustomers();
   return (
-    <div>
+    <div className='flex flex-col gap-2 p-2'>
       <AddEditCustomerModal edit={false} />
       <TableGenerator
         data={customers}

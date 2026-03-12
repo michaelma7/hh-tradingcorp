@@ -5,14 +5,18 @@ import TableGenerator from '@/components/TableGenerator';
 export default async function Products() {
   const products = await getAllProducts();
   return (
-    <div>
+    <div className='flex flex-col gap-2 p-2'>
       <AddEditProductModal edit={false} />
-      <TableGenerator
-        data={products}
-        className=''
-        label={'All Products'}
-        link={'products'}
-      />
+      {products.length ? (
+        <TableGenerator
+          data={products}
+          className=''
+          label={'All Products'}
+          link={'products'}
+        />
+      ) : (
+        <div>Nothing to display</div>
+      )}
     </div>
   );
 }

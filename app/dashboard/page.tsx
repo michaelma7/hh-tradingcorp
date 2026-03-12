@@ -16,7 +16,7 @@ export default async function Dashboard() {
   const manufacturers = await getManfacturersForDashboard();
   const productData = await getProductsforOrders();
   return (
-    <div className='flex w-full flex-col'>
+    <div className='flex w-full flex-col gap-2 p-2'>
       <h2>Dashboard</h2>
       <DashboardTabs
         data={{
