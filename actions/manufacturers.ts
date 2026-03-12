@@ -125,8 +125,8 @@ export async function getAllManufacturers() {
   try {
     return await db
       .select({
-        Name: manufacturers.name,
-        Contact: manufacturers.contact,
+        名称: manufacturers.name,
+        联系: manufacturers.contact,
         id: manufacturers.id,
       })
       .from(manufacturers);

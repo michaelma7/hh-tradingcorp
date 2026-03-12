@@ -124,8 +124,8 @@ export async function getAllCustomers() {
   try {
     return await db
       .select({
-        Name: customers.name,
-        Location: customers.location,
+        名称: customers.name,
+        地点: customers.location,
         id: customers.id,
       })
       .from(customers);

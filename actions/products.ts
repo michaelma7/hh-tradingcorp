@@ -196,11 +196,11 @@ export async function getAllProducts() {
   try {
     return await db
       .select({
-        Name: products.name,
-        Quantity: products.quantity,
-        Reserved: products.reserved,
-        Current: products.current,
-        Manufacturer: products.manufacturedBy,
+        产品名: products.name,
+        数量: products.quantity,
+        保留的: products.reserved,
+        目前可用: products.current,
+        生产厂家: products.manufacturedBy,
         id: products.id,
       })
       .from(products);
