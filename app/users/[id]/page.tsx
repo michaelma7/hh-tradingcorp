@@ -13,12 +13,10 @@ export default async function UserPage({
   if (!user) redirect('/dashboard');
 
   return (
-    <div>
+    <div className='flex flex-col gap-2'>
       <span>Edit User Info</span>
       <EditUserForm data={user} />
-      <div>
-        <DeleteForm id={id} action={deleteUser} />
-      </div>
+      <DeleteForm id={id} action={deleteUser} />
     </div>
   );
 }
