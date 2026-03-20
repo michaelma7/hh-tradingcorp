@@ -25,7 +25,7 @@ import { productsForOrders } from '@/actions/products';
 import { useActionState, useState } from 'react';
 import { CirclePlus, Plus, Trash2 } from 'lucide-react';
 import Submit from './Submit';
-import { useProvider } from '@/app/CurrentUserProvider';
+import { useProvider } from '@/providers/CurrentUserProvider';
 
 export default function AddEditOrderModal({
   productData,

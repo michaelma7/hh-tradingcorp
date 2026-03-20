@@ -30,7 +30,7 @@ export default function AddEditCustomerModal({
   const formAction = async (
     prevState: CustomerFormState,
     formData: FormData,
-  ) => {
+  ): Promise<CustomerFormState> => {
     if (edit) {
       formData.append('id', data!.id as string);
       return await updateCustomer(prevState, formData);

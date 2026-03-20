@@ -1,23 +1,22 @@
 'use client';
-import { useState } from 'react';
+import { useState, useActionState } from 'react';
 import { Input } from '@heroui/react';
 import Submit from '@/components/Submit';
 import { updateUser, userData } from '@/actions/users';
 import { EyeFilledIcon } from '@/public/eyeFilled';
 import { EyeSlashFilledIcon } from '@/public/eyeSlashFilled';
-import { useFormAction } from '@/utils/useFormAction';
 import { UserFormState } from '@/actions/auth';
 
 export default function EditUserForm({ data }: { data: userData }) {
-  const formAction = (prevState: UserFormState, formData: FormData) => {
+  const formAction = async (
+    prevState: UserFormState,
+    formData: FormData,
+  ): Promise<UserFormState> => {
     formData.append('id', data.id);
-    return updateUser(prevState, formData);
+    return await updateUser(prevState, formData);
   };
   const initState: UserFormState = null;
-  const [formState, submit, isPending] = useFormAction<UserFormState>(
-    formAction,
-    initState,
-  );
+  const [formState, submit, isPending] = useActionState(formAction, initState);
   const [isVisible, setIsVisible] = useState(false);
   const toggleVisibility = () => setIsVisible(!isVisible);
   return (

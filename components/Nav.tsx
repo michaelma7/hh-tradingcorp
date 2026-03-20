@@ -2,7 +2,7 @@
 import { Button } from '@heroui/react';
 import { signout } from '@/actions/auth';
 import Link from 'next/link';
-import { useProvider } from '@/app/CurrentUserProvider';
+import { useProvider } from '@/providers/CurrentUserProvider';
 
 export default function Nav() {
   const currentUser = useProvider()?.currentUser;

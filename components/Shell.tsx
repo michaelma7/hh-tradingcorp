@@ -1,7 +1,7 @@
 'use client';
 import Sidebar from './Sidebar';
 import Nav from './Nav';
-import { useProvider } from '@/app/CurrentUserProvider';
+import { useProvider } from '@/providers/CurrentUserProvider';
 import { useEffect } from 'react';
 import { userData } from '@/actions/users';
 
