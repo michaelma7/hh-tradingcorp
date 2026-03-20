@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import Providers from './HeroUIProvider';
-import { UserProvider } from './CurrentUserProvider';
+import Providers from '../providers/HeroUIProvider';
+import { UserProvider } from '../providers/CurrentUserProvider';
 import './globals.css';
 
 const geistSans = Geist({
@@ -34,4 +34,3 @@ export default function RootLayout({
     </html>
   );
 }
-// antialiased light text-foreground bg-background h-screen w-screen
