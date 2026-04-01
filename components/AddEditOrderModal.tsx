@@ -120,7 +120,12 @@ export default function AddEditOrderModal({
           下新订单 <CirclePlus size={16} />
         </Button>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size='3xl'>
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        scrollBehavior='inside'
+        size='3xl'
+      >
         <ModalContent>
           {(onClose) => (
             <>
