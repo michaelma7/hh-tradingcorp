@@ -20,7 +20,11 @@ const seedDb = async () => {
       const pw = await bcrypt.hash(`${process.env.ADMIN_PW}`, 10);
       const [newAdmin] = await db
         .insert(users)
-        .values({ email: `${process.env.ADMIN_EMAIL}`, password: `${pw}` })
+        .values({
+          email: `${process.env.ADMIN_EMAIL}`,
+          password: `${pw}`,
+          role: 'admin',
+        })
         .returning({ id: users.id });
       console.log('inserted user', newAdmin);
     }
