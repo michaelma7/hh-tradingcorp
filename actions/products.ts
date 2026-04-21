@@ -210,16 +210,21 @@ export async function getAllProducts() {
   }
 }
 
-export async function getProductsforOrders() {
-  try {
-    return await db
-      .select({
-        key: products.id,
-        code: products.id,
-        name: products.name,
-      })
-      .from(products);
-  } catch (err) {
-    throw err;
-  }
-}
+export const getProductsforOrders = unstable_cache(
+  async () => {
+    try {
+      const data = await db
+        .select({
+          key: products.id,
+          code: products.id,
+          name: products.name,
+        })
+        .from(products);
+      return data ?? [];
+    } catch (err) {
+      throw err;
+    }
+  },
+  [],
+  { tags: ['product', 'list'], revalidate: 600 },
+);
