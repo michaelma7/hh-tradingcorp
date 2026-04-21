@@ -38,7 +38,7 @@ export default function AddEditOrderModal({
   orderData?: orderData;
   lineItems?: orderItemData[];
 }) {
-  const currentUser = useProvider()?.currentUser;
+  const currentUser = useProvider()?.currentUser.email;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [deliveryStatus, setDeliveryStatus] = useState(
     edit ? orderData!.status : false,

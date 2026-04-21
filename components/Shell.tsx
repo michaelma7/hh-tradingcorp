@@ -12,8 +12,8 @@ export default function Shell({
   children: React.ReactNode;
   data: userData | undefined;
 }) {
-  const changeUser = useProvider()!.changeUser;
-  useEffect(() => changeUser(data!.email), []);
+  const changeUser = useProvider()!.setCurrentUser;
+  useEffect(() => changeUser({ email: data!.email, role: data!.role }), []);
   return (
     <div className='flex w-screen h-screen'>
       <aside className='w-[200px] min-w-[200px] max-w-[200px] h-full border-r border-default-50'>

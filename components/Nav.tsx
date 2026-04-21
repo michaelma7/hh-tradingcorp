@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useProvider } from '@/providers/CurrentUserProvider';
 
 export default function Nav() {
-  const currentUser = useProvider()?.currentUser;
+  const currentUser = useProvider()!.currentUser;
   return (
     <nav className='h-[65px] border-b border-default-50 flex items-center px-6 gap-4'>
       <div className='flex gap-2'>
@@ -20,7 +20,7 @@ export default function Nav() {
         </Button>
       </div>
       <div className='w-1/2'>
-        <span id='username'>{currentUser}</span>
+        <span id='username'>{currentUser.email}</span>
       </div>
     </nav>
   );
