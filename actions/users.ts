@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { getUserFromToken } from './session';
 import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod/v4';
 import { db } from '@/db/db';
 import bcrypt from 'bcrypt';
@@ -13,6 +13,7 @@ import { UserFormState } from './auth';
 export interface userData {
   id: string;
   email: string;
+  role: string;
 }
 const userSchema = z.object({
   email: z.email().trim(),
@@ -100,6 +101,21 @@ export async function deleteUser(id: string) {
     throw err;
   }
   redirect('/dashboard');
+}
+
+export async function getAllUsers() {
+  try {
+    return await db
+      .select({
+        电子邮件: users.email,
+        id: users.id,
+      })
+      .from(users)
+      .orderBy(desc(users.createdAt));
+  } catch (err) {
+    console.error(`User delete error ${err}`);
+    throw err;
+  }
 }
 
 export async function getOneUser(id: string) {
