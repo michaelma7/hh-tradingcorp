@@ -27,6 +27,7 @@ export const users = sqliteTable('users', {
   createdAt: createdAt(),
   email: text('email').unique().notNull(),
   password: text('password').notNull(),
+  role: text('role').notNull(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -105,22 +106,20 @@ export const inventoryTransactionsRelations = relations(
   }),
 );
 
-export const orders = sqliteTable(
-  'orders',
-  {
-    id: id(),
-    createdAt: createdAt(),
-    lastUpdated: lastUpdated(),
-    name: text('name').notNull(),
-    createdById: text('created_by_id').notNull(),
-    customerId: text('customer_id')
-      .references(() => customers.id)
-      .notNull(),
-    totalCents: integer('total_cents').notNull(),
-    status: boolean('delivered').default(false).notNull(),
-  },
-  (table) => [unique().on(table.createdById, table.name)],
-);
+export const orders = sqliteTable('orders', {
+  id: id(),
+  createdAt: createdAt(),
+  lastUpdated: lastUpdated(),
+  name: text('name').notNull(),
+  createdById: text('created_by_id')
+    .references(() => users.id)
+    .notNull(),
+  customerId: text('customer_id')
+    .references(() => customers.id)
+    .notNull(),
+  totalCents: integer('total_cents').notNull(),
+  status: boolean('delivered').default(false).notNull(),
+});
 
 export const ordersRelations = relations(orders, ({ many, one }) => ({
   ordersToOrderItems: many(orderItems),
@@ -128,7 +127,7 @@ export const ordersRelations = relations(orders, ({ many, one }) => ({
     references: [customers.id],
     fields: [orders.customerId],
   }),
-  createdBy: one(users, {
+  createdById: one(users, {
     references: [users.id],
     fields: [orders.createdById],
   }),
