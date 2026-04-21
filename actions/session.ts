@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { users } from '@/db/schema';
 import { JWTPayload, SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import { roles } from '@/rbac/permissions';
+import { Roles } from '@/rbac/permissions';
 
 type Session = JWTPayload;
 const secretKey = process.env.SESSION_SECRET;
@@ -13,7 +13,7 @@ const encodedKey = new TextEncoder().encode(secretKey);
 export interface SessionUser {
   id: string;
   email: string;
-  role: roles;
+  role: Roles;
 }
 
 export async function encrypt(payload: Session) {
