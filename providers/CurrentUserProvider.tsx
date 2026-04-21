@@ -1,18 +1,22 @@
 'use client';
 import { createContext, useContext, useState } from 'react';
 
+type currentUserType = {
+  role: string;
+  email: string;
+};
 type userContextType = {
-  currentUser: string;
-  changeUser: (val: string) => void;
+  currentUser: currentUserType;
+  setCurrentUser: (val: currentUserType) => void;
 };
 
 export const UserContext = createContext<userContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState('');
-  const changeUser = (val: string) => setCurrentUser(val);
+  const [currentUser, setCurrentUser] = useState({ role: 'user', email: '' });
+
   return (
-    <UserContext.Provider value={{ currentUser, changeUser }}>
+    <UserContext.Provider value={{ currentUser, setCurrentUser }}>
       {children}
     </UserContext.Provider>
   );
