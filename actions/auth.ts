@@ -6,6 +6,7 @@ import { createSession, deleteSession } from './session';
 import { ZodSafeParseSuccess, z } from 'zod/v4';
 import bcrypt from 'bcrypt';
 import { redirect } from 'next/navigation';
+import { Roles } from '@/rbac/permissions';
 
 export type UserFormState = {
   message?: string | null;
@@ -14,6 +15,7 @@ export type UserFormState = {
     fieldErrors: {
       email?: string[];
       password?: string[];
+      role?: string[];
       old?: string[];
       confirm?: string[];
       id?: string[];
@@ -34,18 +36,9 @@ const authSchema = z.object({
     .trim(),
 });
 
-const signUpSchema = z
-  .object({
-    email: z.email({ message: 'Please enter a valid email.' }).trim(),
-    password: z
-      .string()
-      .min(8, { message: 'Be at least 8 characters long' })
-      .regex(/[a-zA-Z]/, { message: 'Contain at least one letter.' })
-      .regex(/[0-9]/, { message: 'Contain at least one number.' })
-      .regex(/[^a-zA-Z0-9]/, {
-        message: 'Contain at least one special character.',
-      })
-      .trim(),
+const signUpSchema = authSchema
+  .extend({
+    role: z.enum(Roles),
     confirmPassword: z.string().trim(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -70,7 +63,7 @@ export async function signin({
 
     if (!pw) throw new Error('Invalid Username or password');
 
-    await createSession(match.id);
+    await createSession(match.id, match.role);
   } catch (err) {
     console.error('Failed to sign in', err);
   }
@@ -81,21 +74,22 @@ export async function signup({
 }: ZodSafeParseSuccess<{
   email: string;
   password: string;
+  role?: Roles;
 }>) {
   try {
     const encrypted = await bcrypt.hash(data.password, 10);
     const email = data.email;
-    const rows = await db
+    const role = data.role ? data.role : 'user';
+    const [user] = await db
       .insert(users)
-      .values({ email, password: encrypted })
+      .values({ email, password: encrypted, role: role })
       .returning({
         id: users.id,
         email: users.email,
         createdAt: users.createdAt,
+        role: users.role,
       });
-
-    const user = rows[0];
-    await createSession(user.id);
+    await createSession(user.id, user.role);
   } catch (err) {
     console.error('Failed to create user', err);
   }
@@ -119,6 +113,7 @@ export async function registerUser(
       email: formData.get('email'),
       password: formData.get('password'),
       confirmPassword: formData.get('confirmPassword'),
+      role: formData.get('role') ? formData.get('role') : 'user',
     });
 
     if (!data.success) return { errors: z.flattenError(data.error) };
