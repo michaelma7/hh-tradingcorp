@@ -14,12 +14,16 @@ import AddEditPurchaseOrderModal from '@/components/AddEditPurchaseOrderModal';
 import AddEditProductModal from '@/components/AddEditProductModal';
 import AddEditCustomerModal from '@/components/AddEditCustomerModal';
 import AddEditManufacturerModal from '@/components/AddEditManufacturerModal';
+import RoleGate from './Gates';
 import Link from 'next/link';
+import { useContext } from 'react';
 import { customersData } from '@/actions/customers';
 import { purchaseOrderData } from '@/actions/purchaseOrders';
 import { manufacturerData } from '@/actions/manufacturers';
 import { productData, productsForOrders } from '@/actions/products';
 import { orderData } from '@/actions/orders';
+import { UserContext } from '@/providers/CurrentUserProvider';
+import { Roles } from '@/rbac/permissions';
 
 interface DashboardData {
   orders: orderData[];
@@ -30,6 +34,8 @@ interface DashboardData {
   productData: productsForOrders[];
 }
 export default function DashboardTabs({ data }: { data: DashboardData }) {
+  const user = useContext(UserContext);
+  const role = user?.currentUser.role;
   const orderRows = data.orders.map((order) => {
     return (
       <TableRow key={order.id} className=''>
@@ -103,16 +109,20 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
           </Table>
         </div>
       </Tab>
+
       <Tab key='purchaseOrders' title='库存订单'>
-        <div className='flex gap-2 align-middle p-2'>
-          <AddEditPurchaseOrderModal
-            edit={false}
-            productData={data.productData}
-          />
-          <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/purchaseOrders'>看所有库存订单</Link>
-          </Button>
-        </div>
+        <RoleGate role={role} minRole={Roles.mod}>
+          <div className='flex gap-2 align-middle p-2'>
+            <AddEditPurchaseOrderModal
+              edit={false}
+              productData={data.productData}
+            />
+            <Button color='primary' size='md' radius='md'>
+              <Link href='/dashboard/purchaseOrders'>看所有库存订单</Link>
+            </Button>
+          </div>
+        </RoleGate>
+
         <Table aria-label='Purchase Orders Dashboard Table' isStriped>
           <TableHeader>
             <TableColumn>Id</TableColumn>
@@ -126,13 +136,16 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
           </TableBody>
         </Table>
       </Tab>
+
       <Tab key='products' title='产品'>
-        <div className='flex gap-2 align-middle p-2'>
-          <AddEditProductModal edit={false} />
-          <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/products'>看所有产品</Link>
-          </Button>
-        </div>
+        <RoleGate role={role} minRole={Roles.mod}>
+          <div className='flex gap-2 align-middle p-2'>
+            <AddEditProductModal edit={false} />
+            <Button color='primary' size='md' radius='md'>
+              <Link href='/dashboard/products'>看所有产品</Link>
+            </Button>
+          </div>
+        </RoleGate>
 
         <Table aria-label='Products Dashboard Table' isStriped>
           <TableHeader>
@@ -145,13 +158,16 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
           </TableBody>
         </Table>
       </Tab>
+
       <Tab key='customers' title='顾客'>
-        <div className='flex gap-2 align-middle p-2'>
-          <AddEditCustomerModal edit={false} />
-          <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/customers'>看所有顾客</Link>
-          </Button>
-        </div>
+        <RoleGate role={role} minRole={Roles.mod}>
+          <div className='flex gap-2 align-middle p-2'>
+            <AddEditCustomerModal edit={false} />
+            <Button color='primary' size='md' radius='md'>
+              <Link href='/dashboard/customers'>看所有顾客</Link>
+            </Button>
+          </div>
+        </RoleGate>
 
         <Table aria-label='Customer Dashboard Table' isStriped>
           <TableHeader>
@@ -163,13 +179,16 @@ export default function DashboardTabs({ data }: { data: DashboardData }) {
           </TableBody>
         </Table>
       </Tab>
+
       <Tab key='manufacturers' title='生产厂家'>
-        <div className='flex gap-2 align-middle p-2'>
-          <AddEditManufacturerModal edit={false} />
-          <Button color='primary' size='md' radius='md'>
-            <Link href='/dashboard/manufacturers'>看所有生产厂家</Link>
-          </Button>
-        </div>
+        <RoleGate role={role} minRole={Roles.mod}>
+          <div className='flex gap-2 align-middle p-2'>
+            <AddEditManufacturerModal edit={false} />
+            <Button color='primary' size='md' radius='md'>
+              <Link href='/dashboard/manufacturers'>看所有生产厂家</Link>
+            </Button>
+          </div>
+        </RoleGate>
         <Table aria-label='Manufacturers Dashboard Table' isStriped>
           <TableHeader>
             <TableColumn>名称</TableColumn>
