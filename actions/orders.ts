@@ -30,8 +30,11 @@ export interface orderItemData {
   price?: number;
 }
 
-export interface lineItemData extends orderItemData {
-  subtotal?: number;
+export interface lineItemData {
+  产品名称: string;
+  数量: number;
+  价格: string;
+  小计: string;
 }
 
 export type OrderFormState = {
