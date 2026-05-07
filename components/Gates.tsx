@@ -1,7 +1,12 @@
 'use client';
 
 import { UserContext } from '@/providers/CurrentUserProvider';
-import { Roles, permissions, hierarchy } from '@/rbac/permissions';
+import {
+  Roles,
+  permissions,
+  hierarchy,
+  isAtLeastRole,
+} from '@/rbac/permissions';
 import { ReactNode, useContext } from 'react';
 
 interface GateProps {
